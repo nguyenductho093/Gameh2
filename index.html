@@ -3,237 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Xúc Xắc Firebase - GameVN</title>
+    <title>Chat Gia Đình</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #45a049; }
-        .hidden { display: none; }
-        .balance { font-size: 24px; color: #2e7d32; font-weight: bold; margin: 15px 0; }
-        .log { text-align: left; max-height: 150px; overflow-y: auto; background: #eee; padding: 10px; font-size: 12px; margin-top: 10px; border-radius: 4px; }
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f2f5; display: flex; justify-content: center; height: 100vh; }
+        .container { width: 100%; max-width: 500px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        
+        /* Giao diện Đăng nhập */
+        #auth-form { padding: 40px 20px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
+        #auth-form input, #auth-form button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+        #auth-form button { background: #0084ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+
+        /* Giao diện Chat */
+        #chat-window { flex-grow: 1; display: flex; flex-direction: column; height: 100%; }
+        #header { background: #0084ff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        #logout-btn { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        #messages { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; }
+        
+        /* Bong bóng tin nhắn */
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 20px; word-wrap: break-word; font-size: 15px; }
+        .msg-me { background: #0084ff; color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+        .msg-other { background: #e4e6eb; color: black; align-self: flex-start; border-bottom-left-radius: 5px; }
+        .sender-name { font-size: 11px; color: #65676b; margin-bottom: 2px; display: block; }
+        
+        #chat-input-area { display: flex; padding: 10px; background: #fff; border-top: 1px solid #ddd; }
+        #chat-input { flex-grow: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        #send-btn { background: #0084ff; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Game Xúc Xắc Firebase</h2>
-    
-    <!-- Màn hình Đăng nhập -->
-    <div id="login-screen">
-        <p>Nhập thông tin tài khoản:</p>
-        <input type="text" id="username" placeholder="Tên tài khoản...">
-        <input type="password" id="password" placeholder="Mật khẩu...">
-        <button id="login-btn">Vào Game</button>
+    <div class="container">
+        <div id="auth-form">
+            <h2>🏡 Chat Gia Đình</h2>
+            <input type="email" id="email" placeholder="Email của bạn (Ví dụ: bo@gmail.com)" required>
+            <input type="password" id="password" placeholder="Mật khẩu" required>
+            <button id="login-btn">Đăng Nhập</button>
+        </div>
+
+        <div id="chat-window" class="hidden">
+            <div id="header">
+                <span id="user-display">Đang tải...</span>
+                <button id="logout-btn">Đăng xuất</button>
+            </div>
+            <ul id="messages"></ul>
+            <form id="chat-input-area">
+                <input id="chat-input" autocomplete="off" placeholder="Nhập tin nhắn..." required />
+                <button id="send-btn" type="submit">Gửi</button>
+            </form>
+        </div>
     </div>
 
-    <!-- Màn hình Game chính -->
-    <div id="game-screen" class="hidden">
-        <h3>Xin chào, <span id="display-user"></span></h3>
-        <div class="balance">Số dư: <span id="balance-amount">10,000</span> VNĐ</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Cấu hình Firebase cá nhân của bạn đã được gộp vào đây
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8paYPgRUYh0CfHhlkDFwTpRoNq_BFZbg",
+            authDomain: "messenger-f5c90.firebaseapp.com",
+            projectId: "messenger-f5c90",
+            storageBucket: "messenger-f5c90.firebasestorage.app",
+            messagingSenderId: "876963590642",
+            appId: "1:876963590642:web:c87c47762f1c4facba3b6b"
+        };
+
+        // Khởi tạo các dịch vụ Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Khai báo các thành phần giao diện
+        const authForm = document.getElementById('auth-form');
+        const chatWindow = document.getElementById('chat-window');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const messagesList = document.getElementById('messages');
+        const chatInput = document.getElementById('chat-input');
         
-        <button id="roll-dice-btn">🎲 Lắc Xúc Xắc (Cược 10,000)</button>
-        
-        <hr style="margin: 15px 0;">
-        <h4>Chuyển tiền cho người khác</h4>
-        <input type="text" id="target-user" placeholder="Tên người nhận...">
-        <input type="number" id="transfer-amount" placeholder="Số tiền chuyển...">
-        <button id="transfer-btn" style="background: #2196F3;">Chuyển Tiền</button>
+        let currentUser = null;
 
-        <div class="log" id="game-log">Nhật ký hoạt động...</div>
-        <button id="logout-btn" style="background: #f44336; margin-top: 15px;">Đăng xuất</button>
-    </div>
-</div>
+        // 1. XỬ LÝ ĐĂNG NHẬP
+        document.getElementById('login-btn').addEventListener('click', () => {
+            signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+                .catch(err => alert("Lỗi đăng nhập: " + err.message));
+        });
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, get, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        // 2. XỬ LÝ ĐĂNG XUẤT
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // Cấu hình Firebase của bạn
-    const firebaseConfig = {
-      apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYks",
-      authDomain: "gamevn-f6cc8.firebaseapp.com",
-      databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "gamevn-f6cc8",
-      storageBucket: "gamevn-f6cc8.firebasestorage.app",
-      messagingSenderId: "147617412521",
-      appId: "1:147617412521:web:8143e0c93823accc9480b8"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let currentUser = null;
-    let balanceRef = null;
-    let unsubscribeBalance = null;
-
-    const loginScreen = document.getElementById('login-screen');
-    const gameScreen = document.getElementById('game-screen');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const loginBtn = document.getElementById('login-btn');
-    const displayUser = document.getElementById('display-user');
-    const balanceAmount = document.getElementById('balance-amount');
-    const rollDiceBtn = document.getElementById('roll-dice-btn');
-    const targetUserInput = document.getElementById('target-user');
-    const transferAmountInput = document.getElementById('transfer-amount');
-    const transferBtn = document.getElementById('transfer-btn');
-    const gameLog = document.getElementById('game-log');
-    const logoutBtn = document.getElementById('logout-btn');
-
-    function logMessage(msg) {
-        gameLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        gameLog.scrollTop = gameLog.scrollHeight;
-    }
-
-    loginBtn.addEventListener('click', async () => {
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!username) {
-            alert('Vui lòng nhập tên tài khoản!');
-            return;
-        }
-
-        // Xác thực tài khoản đặc biệt nguyenductho121
-        if (username === 'nguyenductho121') {
-            if (password !== 'nguyenductho121') {
-                alert('Sai mật khẩu tài khoản quản trị!');
-                return;
-            }
-        }
-
-        currentUser = username;
-        displayUser.innerText = currentUser;
-
-        const userRef = ref(db, 'users/' + currentUser);
-        const snapshot = await get(userRef);
-
-        if (!snapshot.exists()) {
-            // Nếu là tài khoản đặc biệt khởi tạo số dư cực lớn, tài khoản thường là 10,000 VNĐ
-            const initialBalance = (currentUser === 'nguyenductho121') ? 999999999999 : 10000;
-            await set(userRef, { balance: initialBalance });
-            if (currentUser === 'nguyenductho121') {
-                logMessage(`Đăng nhập tài khoản đặc biệt: Số dư VÔ HẠN.`);
+        // 3. THEO DÕI TRẠNG THÁI TÀI KHOẢN (ĐÃ ĐĂNG NHẬP HAY CHƯA)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authForm.classList.add('hidden');
+                chatWindow.classList.remove('hidden');
+                document.getElementById('user-display').textContent = "Xin chào: " + user.email;
+                taiLichSuChat(); // Tải tin nhắn khi đăng nhập thành công
             } else {
-                logMessage(`Tạo tài khoản mới thành công! Nhận 10,000 VNĐ khởi nghiệp.`);
-            }
-        } else {
-            if (currentUser === 'nguyenductho121') {
-                await set(userRef, { balance: 999999999999 });
-                logMessage(`Đăng nhập thành công tài khoản đặc biệt: Số dư VÔ HẠN.`);
-            } else {
-                logMessage(`Đăng nhập thành công tài khoản: ${currentUser}`);
-            }
-        }
-
-        // Lắng nghe thay đổi số dư real-time
-        balanceRef = ref(db, 'users/' + currentUser + '/balance');
-        unsubscribeBalance = onValue(balanceRef, (snapshot) => {
-            const balance = snapshot.val();
-            if (currentUser === 'nguyenductho121') {
-                balanceAmount.innerText = "Vô Hạn (∞)";
-            } else {
-                balanceAmount.innerText = balance !== null ? balance.toLocaleString() : 0;
+                currentUser = null;
+                authForm.classList.remove('hidden');
+                chatWindow.classList.add('hidden');
+                messagesList.innerHTML = '';
             }
         });
 
-        loginScreen.classList.add('hidden');
-        gameScreen.classList.remove('hidden');
-    });
-
-    rollDiceBtn.addEventListener('click', async () => {
-        const cost = 10000;
-        const userRef = ref(db, 'users/' + currentUser + '/balance');
-
-        try {
-            await runTransaction(userRef, (currentBalance) => {
-                if (currentUser === 'nguyenductho121') {
-                    const win = Math.random() > 0.5;
-                    if (win) {
-                        logMessage(`🎲 Lắc xúc xắc: THẮNG! (Tài khoản vô hạn)`);
-                    } else {
-                        logMessage(`🎲 Lắc xúc xắc: THUA! (Tài khoản vô hạn không bị trừ tiền)`);
-                    }
-                    return 999999999999;
-                }
-
-                if (currentBalance === null || currentBalance < cost) {
-                    throw new Error("Không đủ 10,000 VNĐ để chơi!");
-                }
-                const win = Math.random() > 0.5;
-                if (win) {
-                    logMessage(`🎲 Lắc xúc xắc: THẮNG! Nhận thêm 20,000 VNĐ.`);
-                    return currentBalance + 20000 - cost;
-                } else {
-                    logMessage(`🎲 Lắc xúc xắc: THUA! Mất ${cost.toLocaleString()} VNĐ.`);
-                    return currentBalance - cost;
-                }
-            });
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-
-    transferBtn.addEventListener('click', async () => {
-        const targetName = targetUserInput.value.trim();
-        const amount = parseInt(transferAmountInput.value);
-
-        if (!targetName || isNaN(amount) || amount <= 0) {
-            alert('Vui lòng nhập đúng tên người nhận và số tiền!');
-            return;
-        }
-
-        if (targetName === currentUser) {
-            alert('Không thể chuyển tiền cho chính mình!');
-            return;
-        }
-
-        const senderRef = ref(db, 'users/' + currentUser + '/balance');
-        const receiverRef = ref(db, 'users/' + targetName + '/balance');
-
-        try {
-            const receiverSnap = await get(ref(db, 'users/' + targetName));
-            if (!receiverSnap.exists()) {
-                alert('Người nhận không tồn tại trên hệ thống!');
-                return;
-            }
-
-            if (currentUser !== 'nguyenductho121') {
-                await runTransaction(senderRef, (senderBalance) => {
-                    if (senderBalance === null || senderBalance < amount) {
-                        throw new Error("Số dư của bạn không đủ để chuyển!");
-                    }
-                    return senderBalance - amount;
+        // 4. GỬI TIN NHẮN LÊN FIREBASE
+        document.getElementById('chat-input-area').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (chatInput.value.trim() !== '') {
+                await addDoc(collection(db, "tin_nhan"), {
+                    sender: currentUser.email,
+                    text: chatInput.value,
+                    createdAt: new Date()
                 });
-            } else {
-                // Tài khoản vô hạn chuyển tiền không bị giảm số dư
-                await runTransaction(senderRef, () => 999999999999);
+                chatInput.value = '';
             }
+        });
 
-            await runTransaction(receiverRef, (receiverBalance) => {
-                return (receiverBalance || 0) + amount;
+        // 5. LẮNG NGHE TIN NHẮN THỜI GIAN THỰC (REAL-TIME)
+        function taiLichSuChat() {
+            const q = query(collection(db, "tin_nhan"), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snapshot) => {
+                messagesList.innerHTML = ''; // Xóa màn hình cũ để cập nhật mới
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const li = document.createElement('li');
+                    
+                    // Phân biệt tin của mình (màu xanh) hay người khác (màu xám)
+                    const laTinCuaToi = data.sender === currentUser.email;
+                    li.className = `msg ${laTinCuaToi ? 'msg-me' : 'msg-other'}`;
+                    
+                    // Hiển thị tên người gửi nếu là người khác
+                    li.innerHTML = `${!laTinCuaToi ? `<span class="sender-name">${data.sender}</span>` : ''} ${data.text}`;
+                    
+                    messagesList.appendChild(li);
+                });
+                messagesList.scrollTop = messagesList.scrollHeight; // Tự cuộn xuống dưới cùng
             });
-
-            logMessage(`Đã chuyển thành công ${amount.toLocaleString()} VNĐ cho ${targetName}`);
-            targetUserInput.value = '';
-            transferAmountInput.value = '';
-        } catch (error) {
-            alert(error.message);
         }
-    });
-
-    logoutBtn.addEventListener('click', () => {
-        if (unsubscribeBalance) unsubscribeBalance();
-        gameScreen.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        usernameInput.value = '';
-        passwordInput.value = '';
-        currentUser = null;
-        gameLog.innerHTML = 'Nhật ký hoạt động...';
-    });
-</script>
-
+    </script>
 </body>
 </html>
