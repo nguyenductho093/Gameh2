@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Xúc Xắc Firebase - GameVN</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #45a049; }
+        .hidden { display: none; }
+        .balance { font-size: 24px; color: #2e7d32; font-weight: bold; margin: 15px 0; }
+        .log { text-align: left; max-height: 150px; overflow-y: auto; background: #eee; padding: 10px; font-size: 12px; margin-top: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Game Xúc Xắc Firebase</h2>
+    
+    <!-- Màn hình Đăng nhập -->
+    <div id="login-screen">
+        <p>Nhập thông tin tài khoản:</p>
+        <input type="text" id="username" placeholder="Tên tài khoản...">
+        <input type="password" id="password" placeholder="Mật khẩu...">
+        <button id="login-btn">Vào Game</button>
+    </div>
+
+    <!-- Màn hình Game chính -->
+    <div id="game-screen" class="hidden">
+        <h3>Xin chào, <span id="display-user"></span></h3>
+        <div class="balance">Số dư: <span id="balance-amount">10,000</span> VNĐ</div>
+        
+        <button id="roll-dice-btn">🎲 Lắc Xúc Xắc (Cược 10,000)</button>
+        
+        <hr style="margin: 15px 0;">
+        <h4>Chuyển tiền cho người khác</h4>
+        <input type="text" id="target-user" placeholder="Tên người nhận...">
+        <input type="number" id="transfer-amount" placeholder="Số tiền chuyển...">
+        <button id="transfer-btn" style="background: #2196F3;">Chuyển Tiền</button>
+
+        <div class="log" id="game-log">Nhật ký hoạt động...</div>
+        <button id="logout-btn" style="background: #f44336; margin-top: 15px;">Đăng xuất</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, get, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // Cấu hình Firebase của bạn
+    const firebaseConfig = {
+      apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYks",
+      authDomain: "gamevn-f6cc8.firebaseapp.com",
+      databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gamevn-f6cc8",
+      storageBucket: "gamevn-f6cc8.firebasestorage.app",
+      messagingSenderId: "147617412521",
+      appId: "1:147617412521:web:8143e0c93823accc9480b8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let currentUser = null;
+    let balanceRef = null;
+    let unsubscribeBalance = null;
+
+    const loginScreen = document.getElementById('login-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const displayUser = document.getElementById('display-user');
+    const balanceAmount = document.getElementById('balance-amount');
+    const rollDiceBtn = document.getElementById('roll-dice-btn');
+    const targetUserInput = document.getElementById('target-user');
+    const transferAmountInput = document.getElementById('transfer-amount');
+    const transferBtn = document.getElementById('transfer-btn');
+    const gameLog = document.getElementById('game-log');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    function logMessage(msg) {
+        gameLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        gameLog.scrollTop = gameLog.scrollHeight;
+    }
+
+    loginBtn.addEventListener('click', async () => {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username) {
+            alert('Vui lòng nhập tên tài khoản!');
+            return;
+        }
+
+        // Xác thực tài khoản đặc biệt nguyenductho121
+        if (username === 'nguyenductho121') {
+            if (password !== 'nguyenductho121') {
+                alert('Sai mật khẩu tài khoản quản trị!');
+                return;
+            }
+        }
+
+        currentUser = username;
+        displayUser.innerText = currentUser;
+
+        const userRef = ref(db, 'users/' + currentUser);
+        const snapshot = await get(userRef);
+
+        if (!snapshot.exists()) {
+            // Nếu là tài khoản đặc biệt khởi tạo số dư cực lớn, tài khoản thường là 10,000 VNĐ
+            const initialBalance = (currentUser === 'nguyenductho121') ? 999999999999 : 10000;
+            await set(userRef, { balance: initialBalance });
+            if (currentUser === 'nguyenductho121') {
+                logMessage(`Đăng nhập tài khoản đặc biệt: Số dư VÔ HẠN.`);
+            } else {
+                logMessage(`Tạo tài khoản mới thành công! Nhận 10,000 VNĐ khởi nghiệp.`);
+            }
+        } else {
+            if (currentUser === 'nguyenductho121') {
+                await set(userRef, { balance: 999999999999 });
+                logMessage(`Đăng nhập thành công tài khoản đặc biệt: Số dư VÔ HẠN.`);
+            } else {
+                logMessage(`Đăng nhập thành công tài khoản: ${currentUser}`);
+            }
+        }
+
+        // Lắng nghe thay đổi số dư real-time
+        balanceRef = ref(db, 'users/' + currentUser + '/balance');
+        unsubscribeBalance = onValue(balanceRef, (snapshot) => {
+            const balance = snapshot.val();
+            if (currentUser === 'nguyenductho121') {
+                balanceAmount.innerText = "Vô Hạn (∞)";
+            } else {
+                balanceAmount.innerText = balance !== null ? balance.toLocaleString() : 0;
+            }
+        });
+
+        loginScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+    });
+
+    rollDiceBtn.addEventListener('click', async () => {
+        const cost = 10000;
+        const userRef = ref(db, 'users/' + currentUser + '/balance');
+
+        try {
+            await runTransaction(userRef, (currentBalance) => {
+                if (currentUser === 'nguyenductho121') {
+                    const win = Math.random() > 0.5;
+                    if (win) {
+                        logMessage(`🎲 Lắc xúc xắc: THẮNG! (Tài khoản vô hạn)`);
+                    } else {
+                        logMessage(`🎲 Lắc xúc xắc: THUA! (Tài khoản vô hạn không bị trừ tiền)`);
+                    }
+                    return 999999999999;
+                }
+
+                if (currentBalance === null || currentBalance < cost) {
+                    throw new Error("Không đủ 10,000 VNĐ để chơi!");
+                }
+                const win = Math.random() > 0.5;
+                if (win) {
+                    logMessage(`🎲 Lắc xúc xắc: THẮNG! Nhận thêm 20,000 VNĐ.`);
+                    return currentBalance + 20000 - cost;
+                } else {
+                    logMessage(`🎲 Lắc xúc xắc: THUA! Mất ${cost.toLocaleString()} VNĐ.`);
+                    return currentBalance - cost;
+                }
+            });
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    transferBtn.addEventListener('click', async () => {
+        const targetName = targetUserInput.value.trim();
+        const amount = parseInt(transferAmountInput.value);
+
+        if (!targetName || isNaN(amount) || amount <= 0) {
+            alert('Vui lòng nhập đúng tên người nhận và số tiền!');
+            return;
+        }
+
+        if (targetName === currentUser) {
+            alert('Không thể chuyển tiền cho chính mình!');
+            return;
+        }
+
+        const senderRef = ref(db, 'users/' + currentUser + '/balance');
+        const receiverRef = ref(db, 'users/' + targetName + '/balance');
+
+        try {
+            const receiverSnap = await get(ref(db, 'users/' + targetName));
+            if (!receiverSnap.exists()) {
+                alert('Người nhận không tồn tại trên hệ thống!');
+                return;
+            }
+
+            if (currentUser !== 'nguyenductho121') {
+                await runTransaction(senderRef, (senderBalance) => {
+                    if (senderBalance === null || senderBalance < amount) {
+                        throw new Error("Số dư của bạn không đủ để chuyển!");
+                    }
+                    return senderBalance - amount;
+                });
+            } else {
+                // Tài khoản vô hạn chuyển tiền không bị giảm số dư
+                await runTransaction(senderRef, () => 999999999999);
+            }
+
+            await runTransaction(receiverRef, (receiverBalance) => {
+                return (receiverBalance || 0) + amount;
+            });
+
+            logMessage(`Đã chuyển thành công ${amount.toLocaleString()} VNĐ cho ${targetName}`);
+            targetUserInput.value = '';
+            transferAmountInput.value = '';
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        if (unsubscribeBalance) unsubscribeBalance();
+        gameScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        usernameInput.value = '';
+        passwordInput.value = '';
+        currentUser = null;
+        gameLog.innerHTML = 'Nhật ký hoạt động...';
+    });
+</script>
+
+</body>
+</html>
