@@ -3,110 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đấu Trí Con Số - Mind Duel</title>
+    <title>Đấu Trí Đoán Số</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #22c55e;
-            --danger: #ef4444;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        h1, h2 { text-align: center; color: #333; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        input[type="number"] { width: 100px; padding: 8px; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .log-box { height: 200px; overflow-y: auto; background: #222; color: #0f0; padding: 10px; font-family: monospace; border-radius: 5px; font-size: 14px; }
+        #gamePlay { display: none; }
+    </style>
+</head>
+<body>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+<div class="container">
+    <h1>🧠 Đấu Trí Đoán Số</h1>
+    
+    <!-- Màn hình thiết lập -->
+    <div id="setup" class="section">
+        <h2>Chọn số bí mật của bạn (1 - 100)</h2>
+        <div style="text-align: center;">
+            <input type="number" id="playerSecret" min="1" max="100" placeholder="VD: 37">
+            <button onclick="startGame()">Bắt Đầu Game</button>
+        </div>
+    </div>
 
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            padding: 30px;
-            box-sizing: border-box;
-        }
+    <!-- Màn hình chơi -->
+    <div id="gamePlay">
+        <div class="section">
+            <h3>Dùng Kỹ Năng (Tìm manh mối)</h3>
+            <div class="grid">
+                <button onclick="useSkill('A')">A: Số đó chẵn hay lẻ?</button>
+                <button onclick="useSkill('B')">B: Số đó > 50 không?</button>
+                <button onclick="useSkill('C')">C: Chia 3 dư mấy?</button>
+                <button onclick="useSkill('D')">D: Có chia hết cho 5?</button>
+            </div>
+        </div>
 
-        h1 {
-            text-align: center;
-            color: #818cf8;
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
+        <div class="section">
+            <h3>Đoán số của Bot</h3>
+            <div style="text-align: center;">
+                <input type="number" id="playerGuess" min="1" max="100" placeholder="Số của Bot...">
+                <button onclick="makeGuess()">Đoán Ngay!</button>
+            </div>
+        </div>
 
-        p.subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-top: 0;
-            margin-bottom: 25px;
-        }
+        <div class="section">
+            <h3>Lịch sử trận đấu</h3>
+            <div id="log" class="log-box"></div>
+        </div>
+    </div>
+</div>
 
-        .screen {
-            display: none;
-        }
+<script>
+    let playerSecret, botSecret;
+    let botMin = 1, botMax = 100; // Trí tuệ của Bot (Khoanh vùng)
+    let gameOver = false;
 
-        .screen.active {
-            display: block;
-        }
+    function logMessage(msg) {
+        const logBox = document.getElementById('log');
+        logBox.innerHTML += `> ${msg}<br>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
 
-        /* Setup Screen */
-        .form-group {
-            margin-bottom: 20px;
+    function startGame() {
+        const input = document.getElementById('playerSecret').value;
+        if (!input || input < 1 || input > 100) {
+            alert("Vui lòng nhập một số từ 1 đến 100!");
+            return;
         }
+        playerSecret = parseInt(input);
+        botSecret = Math.floor(Math.random() * 100) + 1;
+        
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('gamePlay').style.display = 'block';
+        logMessage("Trận đấu bắt đầu! Bot đã chọn xong số.");
+    }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
+    // Xử lý kỹ năng của người chơi
+    function useSkill(skill) {
+        if(gameOver) return;
+        let response = "";
+        switch(skill) {
+            case 'A': response = (botSecret % 2 === 0) ? "Số của bot là số CHẴN." : "Số của bot là số LẺ."; break;
+            case 'B': response = (botSecret > 50) ? "Số của bot LỚN HƠN 50." : "Số của bot NHỎ HƠN HOẶC BẰNG 50."; break;
+            case 'C': response = `Số của bot chia 3 dư ${botSecret % 3}.`; break;
+            case 'D': response = (botSecret % 5 === 0) ? "Số của bot CHIA HẾT cho 5." : "Số của bot KHÔNG chia hết cho 5."; break;
         }
+        logMessage(`👤 Bạn dùng kỹ năng ${skill}: ${response}`);
+        botTurn();
+    }
 
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background-color: #0f172a;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
+    // Xử lý người chơi đoán
+    function makeGuess() {
+        if(gameOver) return;
+        const guess = parseInt(document.getElementById('playerGuess').value);
+        if(!guess) return;
+
+        logMessage(`👤 Bạn đoán số của Bot là: ${guess}`);
+        if (guess === botSecret) {
+            logMessage(`🎉 CHÚC MỪNG! Bạn đã đoán đúng số ${botSecret} và chiến thắng!`);
+            gameOver = true;
+            return;
+        } else {
+            logMessage("❌ Bạn đoán sai rồi!");
+            botTurn(true); // Bot được quyền đoán nếu bạn đoán sai
         }
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            background-color: var(--primary);
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
+    // Lượt của Bot (Bot AI đơn giản dùng thuật toán tìm kiếm nhị phân)
+    function botTurn(isGuessingTurn = false) {
+        if(gameOver) return;
+
+        if (isGuessingTurn) {
+            // Bot đưa ra dự đoán
+            let botGuess = Math.floor((botMin + botMax) / 2);
+            logMessage(`🤖 Bot đoán số của bạn là: ${botGuess}`);
+            if (botGuess === playerSecret) {
+                logMessage(`💀 BOT ĐÃ THẮNG! Số của bạn là ${playerSecret}. Số của bot là ${botSecret}.`);
+                gameOver = true;
+            } else {
+                logMessage("🤖 Bot đoán sai!");
+                // Cập nhật lại logic nếu đoán sai
+                if (botGuess > playerSecret) botMax = botGuess - 1;
+                else botMin = botGuess + 1;
+            }
+        } else {
+            // Bot dùng kỹ năng (Hỏi để thu hẹp phạm vi)
+            let mid = Math.floor((botMin + botMax) / 2);
+            logMessage(`🤖 Bot đang suy luận... (Thu hẹp phạm vi)`);
+            if (playerSecret > mid) {
+                botMin = mid + 1;
+            } else {
+                botMax = mid;
+            }
         }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        /* Game Screen */
-        .status-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
+    }
+</script>
+</body>
+</html>
         .status-card {
             background-color: #0f172a;
             padding: 15px;
