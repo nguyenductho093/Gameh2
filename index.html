@@ -3,155 +3,551 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Gia Đình</title>
+    <title>Game Xúc Xắc Anime - Admin Nguyễn Đức Thọ</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f2f5; display: flex; justify-content: center; height: 100vh; }
-        .container { width: 100%; max-width: 500px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .hidden { display: none !important; }
-        
-        #auth-form { padding: 40px 20px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
-        #auth-form input, #auth-form button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
-        #auth-form button { background: #0084ff; color: white; border: none; cursor: pointer; font-weight: bold; }
-        #error-msg { color: red; font-size: 14px; font-weight: bold; min-height: 20px; }
+        /* CSS HỆ THỐNG GIAO DIỆN */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
 
-        #chat-window { flex-grow: 1; display: flex; flex-direction: column; height: 100%; }
-        #header { background: #0084ff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        #logout-btn { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #messages { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; }
+        body, html {
+            margin: 0; padding: 0; height: 100%; font-family: 'Roboto', sans-serif;
+            background: url('https://images.unsplash.com/photo-1578592391266-932f74127045?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover; color: #fff;
+        }
+
+        /* Lớp phủ tối để dễ nhìn chữ */
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7); z-index: 0;
+        }
+
+        /* Tên Admin phát sáng */
+        .admin-watermark {
+            position: fixed; bottom: 15px; right: 20px; font-size: 24px; font-weight: 900;
+            color: #fff; z-index: 9999; pointer-events: none;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000;
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; text-shadow: 0 0 20px #ff0000, 0 0 30px #ff00ff, 0 0 40px #ff00ff; } }
+
+        .container {
+            position: relative; z-index: 1; display: flex; flex-direction: column;
+            height: 100vh; padding: 20px; box-sizing: border-box;
+        }
+
+        /* Các Panel */
+        .panel {
+            background: rgba(20, 20, 25, 0.85); border: 2px solid #444; border-radius: 10px;
+            padding: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        }
         
-        .msg { max-width: 70%; padding: 10px 15px; border-radius: 20px; word-wrap: break-word; font-size: 15px; }
-        .msg-me { background: #0084ff; color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
-        .msg-other { background: #e4e6eb; color: black; align-self: flex-start; border-bottom-left-radius: 5px; }
-        .sender-name { font-size: 11px; color: #65676b; margin-bottom: 2px; display: block; }
+        .hidden { display: none !important; }
+
+        /* Màn hình Auth */
+        #auth-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
+        }
+        .auth-box { width: 350px; text-align: center; }
+        .auth-box input {
+            width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; outline: none; box-sizing: border-box;
+        }
+        .btn {
+            padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: bold; background: #e50914; color: white; transition: 0.3s;
+        }
+        .btn:hover { background: #ff2030; box-shadow: 0 0 10px #ff2030; }
+        .btn:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
+
+        /* Màn hình Game */
+        #game-screen { display: flex; gap: 20px; height: 100%; }
+        .main-game { flex: 2; display: flex; flex-direction: column; gap: 15px; }
+        .side-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Thanh thông tin người chơi */
+        .player-info { display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
+        .balance { color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
+
+        /* Khu vực Xúc xắc & Thời gian */
+        .board { text-align: center; position: relative; padding: 30px; border: 2px solid #00d2ff; box-shadow: 0 0 15px #00d2ff inset; }
+        .timer-display { font-size: 50px; font-weight: 900; color: #ffeb3b; text-shadow: 0 0 15px #ffeb3b; margin-bottom: 20px;}
+        .dice-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .die { width: 40px; height: 40px; background: #fff; color: #000; font-size: 24px; font-weight: bold; line-height: 40px; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .jackpot-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; color: #ff00ff; text-shadow: 0 0 30px #ff00ff; font-weight: 900; display: none; z-index: 10;}
+
+        /* Bảng Cược */
+        .bet-types { display: flex; justify-content: space-around; margin: 15px 0; }
+        .bet-btn { padding: 15px; width: 30%; font-size: 20px; background: #333; border: 2px solid #555; }
+        .bet-btn.active { border-color: #00d2ff; background: rgba(0, 210, 255, 0.3); box-shadow: 0 0 10px #00d2ff; }
         
-        #chat-input-area { display: flex; padding: 10px; background: #fff; border-top: 1px solid #ddd; }
-        #chat-input { flex-grow: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
-        #send-btn { background: #0084ff; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .bet-amounts { display: flex; justify-content: space-around; margin-bottom: 15px;}
+        .amount-btn { padding: 10px; width: 22%; background: #222; border: 1px solid #777;}
+        .amount-btn.active { background: #4caf50; border-color: #00ff00; }
+
+        .action-bet { width: 100%; padding: 15px; font-size: 20px; background: #ff9800; }
+
+        /* Lịch sử */
+        .history-box { flex: 1; overflow-y: auto; font-size: 14px; }
+        .history-item { padding: 5px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
+        .win { color: #00ff00; } .lose { color: #ff4444; }
+
+        /* Chat & Chuyển tiền */
+        .social-box { flex: 1; display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; overflow-y: auto; border: 1px solid #555; padding: 10px; margin-bottom: 10px; font-size: 14px; }
+        .chat-input { display: flex; gap: 5px; }
+        .chat-input input { flex: 1; padding: 8px; border: none; border-radius: 3px; }
+        
+        .transfer-box { padding-top: 15px; border-top: 1px solid #555; }
+        .transfer-box input { width: 100%; padding: 8px; margin-bottom: 5px; box-sizing: border-box; }
     </style>
+    <!-- Thư viện Firebase v8 tương thích (Dễ tích hợp 1 file) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
+    <div class="overlay"></div>
+    <div class="admin-watermark">Admin : Nguyễn Đức Thọ</div>
 
     <div class="container">
-        <div id="auth-form">
-            <h2>🏡 Chat Gia Đình</h2>
-            <p id="error-msg"></p> <input type="email" id="email" placeholder="Email của bạn (Ví dụ: bo@gmail.com)" required>
-            <input type="password" id="password" placeholder="Mật khẩu" required>
-            <button id="login-btn">Đăng Nhập</button>
+        <!-- MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
+        <div id="auth-screen" class="panel">
+            <div class="auth-box">
+                <h2>CỔNG GAME XÚC XẮC</h2>
+                <input type="email" id="email" placeholder="Email của bạn">
+                <input type="password" id="password" placeholder="Mật khẩu">
+                <button class="btn" onclick="login()">Đăng Nhập</button>
+                <button class="btn" style="background:#00d2ff; color:#000;" onclick="register()">Đăng Ký</button>
+                <p id="auth-error" style="color: #ff4444; font-size: 12px;"></p>
+            </div>
         </div>
 
-        <div id="chat-window" class="hidden">
-            <div id="header">
-                <span id="user-display">Đang tải...</span>
-                <button id="logout-btn">Đăng xuất</button>
+        <!-- MÀN HÌNH GAME CHÍNH -->
+        <div id="game-screen" class="hidden">
+            <div class="main-game">
+                <!-- Thông tin -->
+                <div class="panel player-info">
+                    <span id="player-email">Loading...</span>
+                    <span>Số dư: <span class="balance" id="player-balance">0 VNĐ</span></span>
+                    <button class="btn" style="background: #555;" onclick="logout()">Đăng Xuất</button>
+                </div>
+
+                <!-- Bàn chơi xúc xắc -->
+                <div class="panel board">
+                    <div class="timer-display" id="timer">12s</div>
+                    <div id="jackpot-alert" class="jackpot-text">NỔ HŨ!</div>
+                    <h3 id="current-result-text">Đang chờ phiên mới...</h3>
+                    <div class="dice-container" id="dice-container">
+                        <!-- Xúc xắc render tại đây -->
+                    </div>
+                </div>
+
+                <!-- Đặt cược -->
+                <div class="panel">
+                    <h3 style="margin-top:0;">Chọn Cửa Cược:</h3>
+                    <div class="bet-types">
+                        <button class="btn bet-btn" onclick="selectType('Gà')" id="btn-Ga">GÀ (10-40)</button>
+                        <button class="btn bet-btn" onclick="selectType('Vịt')" id="btn-Vit">VỊT (41-59)</button>
+                        <button class="btn bet-btn" onclick="selectType('Ngỗng')" id="btn-Ngong">NGỖNG (60-100)</button>
+                    </div>
+                    <div class="bet-amounts">
+                        <button class="btn amount-btn" onclick="selectAmount(100000)" id="amt-100k">100k</button>
+                        <button class="btn amount-btn" onclick="selectAmount(200000)" id="amt-200k">200k</button>
+                        <button class="btn amount-btn" onclick="selectAmount(500000)" id="amt-500k">500k</button>
+                        <button class="btn amount-btn" onclick="selectAmount('ALL')" id="amt-all">ALL IN</button>
+                    </div>
+                    <button class="btn action-bet" id="btn-place-bet" onclick="placeBet()">ĐẶT CƯỢC</button>
+                    <div id="bet-status" style="margin-top: 10px; text-align: center; color: #00d2ff;">Chưa đặt cược</div>
+                </div>
             </div>
-            <ul id="messages"></ul>
-            <form id="chat-input-area">
-                <input id="chat-input" autocomplete="off" placeholder="Nhập tin nhắn..." required />
-                <button id="send-btn" type="submit">Gửi</button>
-            </form>
+
+            <div class="side-panel">
+                <!-- Lịch sử cá nhân -->
+                <div class="panel history-box">
+                    <h3 style="margin-top:0;">Lịch sử Cược</h3>
+                    <div id="history-list"></div>
+                </div>
+
+                <!-- Chat & Chuyển Tiền -->
+                <div class="panel social-box">
+                    <h3 style="margin-top:0;">Kênh Chat Tổng</h3>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chat-input-text" placeholder="Nhập tin nhắn...">
+                        <button class="btn" style="margin:0;" onclick="sendMessage()">Gửi</button>
+                    </div>
+                    
+                    <div class="transfer-box">
+                        <h4 style="margin:5px 0;">Chuyển tiền cho người chơi</h4>
+                        <input type="email" id="transfer-email" placeholder="Email người nhận">
+                        <input type="number" id="transfer-amount" placeholder="Số tiền VNĐ">
+                        <button class="btn" style="width:100%; margin:0;" onclick="transferMoney()">Chuyển Tiền</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+    <script>
+        // =========================================================================
+        // 1. CẤU HÌNH FIREBASE THEO YÊU CẦU
+        // =========================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD8paYPgRUYh0CfHhlkDFwTpRoNq_BFZbg",
             authDomain: "messenger-f5c90.firebaseapp.com",
+            databaseURL: "https://messenger-f5c90-default-rtdb.firebaseio.com", // Đã bổ sung URL Database tự động theo Project ID
             projectId: "messenger-f5c90",
             storageBucket: "messenger-f5c90.firebasestorage.app",
             messagingSenderId: "876963590642",
             appId: "1:876963590642:web:c87c47762f1c4facba3b6b"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const authForm = document.getElementById('auth-form');
-        const chatWindow = document.getElementById('chat-window');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const messagesList = document.getElementById('messages');
-        const chatInput = document.getElementById('chat-input');
-        const errorMsg = document.getElementById('error-msg');
         
+        // Khởi tạo Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch(e) {
+            console.error("Firebase chưa được cấu hình đúng: ", e);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Biến toàn cục
         let currentUser = null;
+        let myBalance = 0;
+        let currentBet = null; 
+        let lastProcessedRollCount = 0;
+        
+        let selectedType = null;
+        let selectedAmount = 0;
 
-        // XỬ LÝ ĐĂNG NHẬP VỚI THÔNG BÁO LỖI TIẾNG VIỆT
-        document.getElementById('login-btn').addEventListener('click', () => {
-            errorMsg.textContent = "Đang kiểm tra đăng nhập..."; // Hiển thị trạng thái đang xử lý
-            
-            signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
-                .catch(err => {
-                    // Dịch các lỗi phổ biến của Firebase sang tiếng Việt
-                    if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                        errorMsg.textContent = "❌ Sai email hoặc mật khẩu! Vui lòng thử lại.";
-                    } else if (err.code === 'auth/invalid-email') {
-                        errorMsg.textContent = "❌ Định dạng email không hợp lệ.";
-                    } else if (err.code === 'auth/too-many-requests') {
-                        errorMsg.textContent = "❌ Bạn đã nhập sai quá nhiều lần. Hãy thử lại sau.";
-                    } else {
-                        errorMsg.textContent = "❌ Lỗi: " + err.message;
-                    }
-                });
-        });
+        // Định dạng tiền
+        const formatMoney = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
-        // XỬ LÝ ĐĂNG XUẤT
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            signOut(auth);
-            errorMsg.textContent = ""; // Xóa thông báo lỗi cũ
-        });
+        // =========================================================================
+        // 2. HỆ THỐNG XÁC THỰC (AUTH)
+        // =========================================================================
+        function showScreen(screenId) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+        }
 
-        // THEO DÕI TRẠNG THÁI TÀI KHOẢN
-        onAuthStateChanged(auth, (user) => {
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
-                authForm.classList.add('hidden');
-                chatWindow.classList.remove('hidden');
-                document.getElementById('user-display').textContent = user.email;
-                taiLichSuChat(); 
+                showScreen('game-screen');
+                document.getElementById('player-email').innerText = user.email;
+                
+                // Lắng nghe dữ liệu user
+                db.ref('users/' + user.uid).on('value', snap => {
+                    if(snap.exists()) {
+                        myBalance = snap.val().balance;
+                        document.getElementById('player-balance').innerText = formatMoney(myBalance);
+                    }
+                });
+
+                // Khởi động đồng bộ hệ thống trò chơi
+                initGameSync();
+                initChat();
             } else {
                 currentUser = null;
-                authForm.classList.remove('hidden');
-                chatWindow.classList.add('hidden');
-                messagesList.innerHTML = '';
+                showScreen('auth-screen');
             }
         });
 
-        // GỬI TIN NHẮN
-        document.getElementById('chat-input-area').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (chatInput.value.trim() !== '') {
-                await addDoc(collection(db, "tin_nhan"), {
-                    sender: currentUser.email,
-                    text: chatInput.value,
-                    createdAt: new Date()
-                });
-                chatInput.value = '';
-            }
-        });
+        async function register() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                // Tạo vốn khởi điểm 5 triệu VNĐ
+                await db.ref('users/' + cred.user.uid).set({ email: email, balance: 5000000 });
+            } catch(e) { document.getElementById('auth-error').innerText = e.message; }
+        }
 
-        // TẢI LỊCH SỬ TIN NHẮN
-        function taiLichSuChat() {
-            const q = query(collection(db, "tin_nhan"), orderBy("createdAt", "asc"));
-            onSnapshot(q, (snapshot) => {
-                messagesList.innerHTML = ''; 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const li = document.createElement('li');
+        async function login() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try { await auth.signInWithEmailAndPassword(email, pass); }
+            catch(e) { document.getElementById('auth-error').innerText = e.message; }
+        }
+
+        function logout() { auth.signOut(); }
+
+        // =========================================================================
+        // 3. LOGIC XÚC XẮC & ĐỒNG BỘ THỜI GIAN THỰC (SYNC)
+        // =========================================================================
+        
+        function initGameSync() {
+            // Lắng nghe đồng hồ đếm ngược và trạng thái game toàn cục
+            db.ref('gameState').on('value', snap => {
+                if(!snap.exists()) return;
+                const state = snap.val();
+                
+                // Nếu có phiên xổ mới mà ta chưa xử lý
+                if (state.rollCount > lastProcessedRollCount && lastProcessedRollCount !== 0) {
+                    processRollResult(state.currentScore, state.animalResult, state.isJackpot);
+                }
+                
+                lastProcessedRollCount = state.rollCount;
+                updateBoardVisuals(state);
+            });
+
+            // Vòng lặp đếm ngược cục bộ mỗi giây (1 thiết bị sẽ cập nhật lên DB nếu hết giờ)
+            setInterval(() => {
+                db.ref('gameState').once('value', snap => {
+                    let now = Date.now();
+                    let state = snap.val();
                     
-                    const laTinCuaToi = data.sender === currentUser.email;
-                    li.className = `msg ${laTinCuaToi ? 'msg-me' : 'msg-other'}`;
-                    li.innerHTML = `${!laTinCuaToi ? `<span class="sender-name">${data.sender}</span>` : ''} ${data.text}`;
-                    
-                    messagesList.appendChild(li);
+                    // Khởi tạo nếu chưa có
+                    if (!state) {
+                        triggerNewRoll(now);
+                        return;
+                    }
+
+                    let timeLeft = Math.ceil((state.nextRollTime - now) / 1000);
+                    if (timeLeft < 0) timeLeft = 0;
+                    document.getElementById('timer').innerText = timeLeft + "s";
+
+                    // Chặn cược 2 giây cuối
+                    document.getElementById('btn-place-bet').disabled = (timeLeft <= 2);
+
+                    // Hết giờ -> Đồng bộ quay xúc xắc (Sử dụng Transaction để không bị đúp)
+                    if (now >= state.nextRollTime) {
+                        triggerNewRoll(now);
+                    }
                 });
-                messagesList.scrollTop = messagesList.scrollHeight; 
-            }, (error) => {
-                alert("Lỗi tải tin nhắn: Hãy kiểm tra quy tắc (Rules) của Firestore.");
+            }, 1000);
+        }
+
+        // Tạo ra kết quả logic và đẩy lên Firebase
+        function triggerNewRoll(now) {
+            db.ref('gameState').transaction((currentData) => {
+                if (currentData === null) {
+                    return { nextRollTime: now + 12000, history: [], rollCount: 1, currentScore: 0, isJackpot: false };
+                }
+                
+                // Nếu thời gian hiện tại đã vượt qua nextRollTime
+                if (now >= currentData.nextRollTime) {
+                    let newCount = (currentData.rollCount || 0) + 1;
+                    let history = currentData.history || [];
+                    
+                    // Tính toán ngẫu nhiên có RÀNG BUỘC Logic
+                    let result = generateLogicalScore(history, newCount);
+                    
+                    history.push(result.animal);
+                    if (history.length > 50) history.shift();
+
+                    return {
+                        nextRollTime: currentData.nextRollTime + 12000,
+                        history: history,
+                        rollCount: newCount,
+                        currentScore: result.score,
+                        animalResult: result.animal,
+                        isJackpot: result.isJackpot
+                    };
+                }
+                return currentData; // Không làm gì nếu người khác đã cập nhật
+            });
+        }
+
+        function generateLogicalScore(historyArray, rollCount) {
+            let attempts = 0;
+            while (attempts < 100) {
+                let isTenth = (rollCount % 10 === 0);
+                let score = Math.floor(Math.random() * 91) + 10; // 10 -> 100
+                let isJackpot = false;
+
+                // Nổ hũ mỗi 10 lần: Ép ra 10 hoặc 100
+                if (isTenth) {
+                    score = (Math.random() > 0.5) ? 10 : 100;
+                    isJackpot = true;
+                } else {
+                    // Tránh nổ hũ ngoài chu kỳ 10
+                    if (score === 10 || score === 100) { attempts++; continue; }
+                }
+
+                let animal = score <= 40 ? 'Gà' : (score <= 59 ? 'Vịt' : 'Ngỗng');
+
+                // Kiểm tra Ràng Buộc (Không quá 5 trong 7, không trùng > 5 liên tiếp)
+                if (!isTenth) {
+                    let recent7 = historyArray.slice(-6); 
+                    recent7.push(animal);
+                    let countIn7 = recent7.filter(a => a === animal).length;
+                    
+                    let consecutive = 1;
+                    for (let i = historyArray.length - 1; i >= 0; i--) {
+                        if (historyArray[i] === animal) consecutive++;
+                        else break;
+                    }
+
+                    if (countIn7 > 5 || consecutive > 5) { attempts++; continue; }
+                }
+
+                return { score, animal, isJackpot };
+            }
+            // Fallback an toàn
+            let score = Math.floor(Math.random() * 91) + 10;
+            return { score, animal: score <= 40 ? 'Gà' : (score <= 59 ? 'Vịt' : 'Ngỗng'), isJackpot: false };
+        }
+
+        // =========================================================================
+        // 4. HỆ THỐNG CƯỢC & HIỂN THỊ
+        // =========================================================================
+        function selectType(type) {
+            selectedType = type;
+            document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(type === 'Gà' ? 'btn-Ga' : type === 'Vịt' ? 'btn-Vit' : 'btn-Ngong').classList.add('active');
+        }
+
+        function selectAmount(amt) {
+            selectedAmount = amt;
+            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+            if(amt === 100000) document.getElementById('amt-100k').classList.add('active');
+            else if(amt === 200000) document.getElementById('amt-200k').classList.add('active');
+            else if(amt === 500000) document.getElementById('amt-500k').classList.add('active');
+            else document.getElementById('amt-all').classList.add('active');
+        }
+
+        function placeBet() {
+            if (!selectedType || !selectedAmount) {
+                alert("Vui lòng chọn Cửa và Mệnh giá cược!"); return;
+            }
+            let actualAmount = selectedAmount === 'ALL' ? myBalance : selectedAmount;
+            
+            if (actualAmount <= 0 || actualAmount > myBalance) {
+                alert("Số dư không đủ!"); return;
+            }
+            
+            if (currentBet) {
+                alert("Bạn đã cược trong phiên này rồi!"); return;
+            }
+
+            // Trừ tiền ngay lập tức
+            db.ref('users/' + currentUser.uid + '/balance').transaction(bal => {
+                if(bal >= actualAmount) return bal - actualAmount;
+                return bal; // hủy giao dịch nếu ko đủ
+            }, (error, committed) => {
+                if(committed) {
+                    currentBet = { type: selectedType, amount: actualAmount };
+                    document.getElementById('bet-status').innerText = `Đã cược: ${formatMoney(actualAmount)} vào ${selectedType}`;
+                }
+            });
+        }
+
+        function processRollResult(score, animal, isJackpot) {
+            if (!currentBet) return; // Người chơi không cược phiên này
+            
+            let won = (currentBet.type === animal);
+            let betAmt = currentBet.amount;
+            let logMsg = "";
+            let logClass = "";
+
+            if (won) {
+                // Tính tiền thưởng (X3 vốn cơ bản, nếu nổ hũ X18 + X3 = X21)
+                let multiplier = isJackpot ? 21 : 3;
+                let totalReturn = betAmt * multiplier;
+                let netWin = totalReturn - betAmt; 
+
+                // Cộng lại tiền vào tài khoản
+                db.ref('users/' + currentUser.uid + '/balance').transaction(bal => bal + totalReturn);
+                logMsg = `THẮNG (+${formatMoney(netWin)}) [Cược ${currentBet.type}, Ra ${animal} - ${score}đ]`;
+                logClass = "win";
+            } else {
+                logMsg = `THUA (-${formatMoney(betAmt)}) [Cược ${currentBet.type}, Ra ${animal} - ${score}đ]`;
+                logClass = "lose";
+            }
+
+            // Ghi lịch sử giao diện
+            let div = document.createElement('div');
+            div.className = `history-item ${logClass}`;
+            div.innerText = logMsg;
+            let list = document.getElementById('history-list');
+            list.prepend(div);
+
+            // Reset cược
+            currentBet = null;
+            document.getElementById('bet-status').innerText = "Chưa đặt cược";
+        }
+
+        function updateBoardVisuals(state) {
+            if(!state || state.currentScore === 0) return;
+            
+            // Xóa jackpot text
+            let jpText = document.getElementById('jackpot-alert');
+            jpText.style.display = state.isJackpot ? 'block' : 'none';
+
+            let text = document.getElementById('current-result-text');
+            text.innerText = `Lần trước: ${state.currentScore} ĐIỂM - Thuộc về: ${state.animalResult}`;
+            text.style.color = state.animalResult === 'Gà' ? '#ff9800' : state.animalResult === 'Vịt' ? '#00d2ff' : '#4caf50';
+
+            // Phân bổ ngẫu nhiên điểm số ra 10 xúc xắc (chỉ để làm màu UI)
+            let remaining = state.currentScore - 10;
+            let dice = Array(10).fill(1);
+            while(remaining > 0) {
+                let idx = Math.floor(Math.random()*10);
+                if(dice[idx] < 10) { dice[idx]++; remaining--; }
+            }
+
+            let container = document.getElementById('dice-container');
+            container.innerHTML = '';
+            dice.forEach(val => {
+                let d = document.createElement('div');
+                d.className = 'die';
+                d.innerText = val;
+                container.appendChild(d);
+            });
+        }
+
+        // =========================================================================
+        // 5. CHAT & CHUYỂN TIỀN
+        // =========================================================================
+        function initChat() {
+            const msgBox = document.getElementById('chat-messages');
+            db.ref('chat').limitToLast(50).on('child_added', snap => {
+                let data = snap.val();
+                let p = document.createElement('div');
+                p.style.marginBottom = '5px';
+                p.innerHTML = `<b style="color:#00d2ff;">${data.email.split('@')[0]}:</b> ${data.text}`;
+                msgBox.appendChild(p);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            });
+        }
+
+        function sendMessage() {
+            let input = document.getElementById('chat-input-text');
+            let text = input.value.trim();
+            if(text.length > 0) {
+                db.ref('chat').push({
+                    email: currentUser.email, text: text, time: Date.now()
+                });
+                input.value = '';
+            }
+        }
+
+        function transferMoney() {
+            let toEmail = document.getElementById('transfer-email').value.trim();
+            let amount = parseInt(document.getElementById('transfer-amount').value);
+
+            if(!toEmail || !amount || amount <= 0) return alert("Dữ liệu không hợp lệ!");
+            if(amount > myBalance) return alert("Không đủ số dư!");
+            if(toEmail === currentUser.email) return alert("Không thể chuyển cho chính mình!");
+
+            // Quét tìm User UID qua Email (Cấu trúc phẳng cho demo, thực tế cần index)
+            db.ref('users').once('value', snap => {
+                let users = snap.val();
+                let targetUid = null;
+                for(let uid in users) {
+                    if(users[uid].email === toEmail) { targetUid = uid; break; }
+                }
+
+                if(!targetUid) return alert("Không tìm thấy người dùng này!");
+
+                // Thực hiện trừ tiền mình và cộng tiền người ta
+                db.ref('users/' + currentUser.uid + '/balance').transaction(bal => bal - amount);
+                db.ref('users/' + targetUid + '/balance').transaction(bal => bal + amount);
+                alert(`Đã chuyển thành công ${formatMoney(amount)} cho ${toEmail}!`);
+                
+                document.getElementById('transfer-amount').value = '';
             });
         }
     </script>
