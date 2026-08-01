@@ -3,701 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Xúc Xắc - Admin: Nguyễn Đức Thọ</title>
+    <title>Đấu Trí Con Số - Mind Duel</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;700&display=swap');
- <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK v9 compat (Chạy trực tiếp trên trình duyệt web/điện thoại, không cần npm) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #22c55e;
+            --danger: #ef4444;
+        }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            color: white;
-            background: url('https://images.wallpaperscraft.com/image/single/dragon_art_anime_128919_1920x1080.jpg') no-repeat center center fixed;
-            background-size: cover;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: -1;
-        }
-
-        /* Admin Text Glow */
-        .admin-text {
-            position: fixed;
-            top: 15px;
-            left: 20px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 22px;
-            font-weight: 900;
-            color: #00ffff;
-            text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff;
-            z-index: 1000;
-            animation: pulse 1.5s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff; }
-            to { text-shadow: 0 0 10px #00ffff, 0 0 25px #00ffff, 0 0 40px #00ffff; }
-        }
-
-        /* Auth Modal (Đăng nhập / Đăng ký) */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 2000;
-        }
-        .auth-card {
-            background: rgba(20, 20, 20, 0.95);
-            border: 2px solid #00ffff;
-            border-radius: 15px;
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             padding: 30px;
-            width: 350px;
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            box-sizing: border-box;
+        }
+
+        h1 {
             text-align: center;
+            color: #818cf8;
+            margin-top: 0;
+            margin-bottom: 5px;
         }
-        .auth-card h2 { margin-bottom: 20px; font-family: 'Orbitron', sans-serif; color: #ffcc00; }
-        .auth-card input {
-            width: 100%; padding: 12px; margin: 8px 0;
-            border-radius: 8px; border: 1px solid #444;
-            background: #111; color: #fff; font-size: 15px;
-        }
-        .auth-card button {
-            width: 100%; padding: 12px; margin-top: 15px;
-            border-radius: 8px; border: none;
-            background: linear-gradient(45deg, #00ffff, #0088cc);
-            color: #000; font-weight: bold; font-size: 16px; cursor: pointer;
-        }
-        .auth-card button:hover { opacity: 0.9; }
-        .auth-switch { margin-top: 15px; font-size: 13px; color: #aaa; cursor: pointer; }
-        .auth-switch span { color: #00ffff; text-decoration: underline; }
 
-        /* Header / Top Info */
-        .header-info {
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Setup Screen */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--primary);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Game Screen */
+        .status-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background-color: #0f172a;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .status-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .status-card .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #818cf8;
+        }
+
+        .log-box {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            height: 180px;
+            overflow-y: auto;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 90%; max-width: 1000px;
-            margin-top: 60px; padding: 15px 25px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #ffcc00; border-radius: 15px;
-            box-shadow: 0 0 15px #ffcc00;
-            font-size: 18px; font-weight: bold;
-        }
-        .user-meta { display: flex; flex-direction: column; gap: 5px; }
-        .balance { color: #00ff00; }
-        .btn-transfer, .btn-logout {
-            padding: 8px 15px; border-radius: 6px; border: none;
-            font-weight: bold; cursor: pointer; margin-left: 10px;
-        }
-        .btn-transfer { background: #ff9900; color: black; }
-        .btn-logout { background: #ff3333; color: white; }
-
-        /* Game Board */
-        .game-container {
-            display: flex; flex-direction: column; align-items: center;
-            width: 100%; max-width: 1000px; margin-top: 20px;
-        }
-        .timer-container {
-            font-family: 'Orbitron', sans-serif; font-size: 36px;
-            color: #ff3333; text-shadow: 0 0 10px #ff3333; margin-bottom: 15px;
-        }
-        .dice-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 15px; }
-        .die {
-            width: 55px; height: 55px;
-            background: linear-gradient(135deg, #ffffff, #cccccc);
-            color: black; font-size: 26px; font-weight: 900;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 10px; box-shadow: inset 0 0 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.8);
-            border: 2px solid #444;
-        }
-        .total-score {
-            font-size: 28px; font-weight: bold; color: #ffd700;
-            text-shadow: 0 0 10px #ffd700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        /* Betting Area */
-        .betting-board { display: flex; gap: 15px; width: 100%; justify-content: center; margin-bottom: 20px; }
-        .bet-zone {
-            flex: 1; background: rgba(20, 20, 20, 0.85);
-            border: 3px solid #555; border-radius: 15px; padding: 15px;
-            text-align: center; cursor: pointer; transition: 0.3s;
+        .log-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: #1e293b;
         }
-        .bet-zone:hover { background: rgba(40, 40, 40, 0.9); }
-        .zone-title { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-        .ga-title { color: #ff9900; }
-        .vit-title { color: #33ccff; }
-        .ngong-title { color: #ff33cc; }
-        .zone-desc { font-size: 13px; color: #aaa; margin-bottom: 10px; }
-        .bet-amount { font-size: 20px; color: #00ff00; font-weight: bold; }
 
-        /* Chips */
-        .chips-container { display: flex; gap: 12px; margin-bottom: 20px; }
-        .chip {
-            width: 70px; height: 70px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-weight: bold; font-size: 16px; cursor: pointer;
-            border: 3px dashed white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            transition: 0.2s;
+        .log-item.bot {
+            border-left: 4px solid var(--danger);
         }
-        .chip:hover, .chip.active { transform: scale(1.1); border-style: solid; box-shadow: 0 0 15px #fff; }
-        .chip-100 { background: #3498db; }
-        .chip-200 { background: #9b59b6; }
-        .chip-500 { background: #e67e22; }
-        .chip-all { background: #e74c3c; font-size: 14px; }
 
-        /* History & Logs */
-        .history-container {
-            width: 90%; max-width: 1000px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 15px; padding: 15px; margin-bottom: 40px; border: 1px solid #444;
+        .log-item.player {
+            border-left: 4px solid var(--accent);
         }
-        .history-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #555; padding-bottom: 5px; }
-        .history-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-        .hist-item { padding: 4px 10px; border-radius: 5px; font-weight: bold; font-size: 13px; }
-        .hist-Ga { background: #ff9900; color: black; }
-        .hist-Vit { background: #33ccff; color: black; }
-        .hist-Ngong { background: #ff33cc; color: white; }
 
-        .log-list { max-height: 120px; overflow-y: auto; font-size: 13px; }
-        .log-item { padding: 4px 0; border-bottom: 1px solid #333; }
-        .log-win { color: #00ff00; }
-        .log-lose { color: #ff3333; }
-        .log-transfer { color: #ffcc00; }
-
-        /* Popup Jackpot */
-        .jackpot-popup {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            background: radial-gradient(circle, #ffcc00, #ff0000);
-            padding: 30px 60px; border-radius: 20px; text-align: center;
-            font-size: 40px; font-weight: 900; color: white;
-            z-index: 2000; box-shadow: 0 0 50px #ffcc00;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        .jackpot-popup.show { transform: translate(-50%, -50%) scale(1); }
+
+        .action-btn {
+            background-color: #334155;
+            font-size: 14px;
+            text-align: left;
+            padding: 10px 15px;
+        }
+
+        .action-btn:hover {
+            background-color: #475569;
+        }
+
+        .guess-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        .guess-section input {
+            flex: 1;
+        }
+
+        .guess-section button {
+            width: 120px;
+            background-color: var(--accent);
+        }
+
+        .guess-section button:hover {
+            background-color: #16a34a;
+        }
     </style>
 </head>
 <body>
 
-    <div class="overlay"></div>
-    <div class="admin-text">Admin : Nguyễn Đức Thọ</div>
+<div class="container">
+    <h1>Đấu Trí Con Số</h1>
+    <p class="subtitle">Suy luận thông minh - Đoán nhanh chiến thắng</p>
 
-    <!-- Modal Đăng nhập / Đăng ký -->
-    <div class="modal-overlay" id="auth-modal">
-        <div class="auth-card" id="auth-login-box">
-            <h2>ĐĂNG NHẬP</h2>
-            <input type="text" id="login-username" placeholder="Tên tài khoản">
-            <input type="password" id="login-password" placeholder="Mật khẩu">
-            <button onclick="login()">Vào Trò Chơi</button>
-            <div class="auth-switch" onclick="switchAuthForm('register')">Chưa có tài khoản? <span>Đăng ký ngay</span></div>
+    <!-- MÀN HÌNH 1: CÀI ĐẶT -->
+    <div id="setup-screen" class="screen active">
+        <div class="form-group">
+            <label for="range-select">Phạm vi con số:</label>
+            <select id="range-select">
+                <option value="50">1 đến 50 (Dễ)</option>
+                <option value="100" selected>1 đến 100 (Chuẩn)</option>
+                <option value="200">1 đến 200 (Khó)</option>
+            </select>
         </div>
-        <div class="auth-card" id="auth-register-box" style="display: none;">
-            <h2>ĐĂNG KÝ</h2>
-            <input type="text" id="reg-username" placeholder="Tên tài khoản mới">
-            <input type="password" id="reg-password" placeholder="Mật khẩu">
-            <button onclick="register()">Tạo Tài Khoản (Nhận 5M)</button>
-            <div class="auth-switch" onclick="switchAuthForm('login')">Đã có tài khoản? <span>Đăng nhập</span></div>
+        <div class="form-group">
+            <label for="player-secret">Số bí mật của bạn (1 đến phạm vi chọn):</label>
+            <input type="number" id="player-secret" placeholder="Ví dụ: 37" min="1">
         </div>
+        <button onclick="startGame()">Bắt đầu trận đấu</button>
     </div>
 
-    <!-- Modal Chuyển tiền -->
-    <div class="modal-overlay" id="transfer-modal" style="display: none;">
-        <div class="auth-card">
-            <h2>CHUYỂN TIỀN</h2>
-            <input type="text" id="tf-receiver" placeholder="Tên người nhận">
-            <input type="number" id="tf-amount" placeholder="Số tiền (VNĐ)">
-            <button onclick="executeTransfer()">Xác Nhận Chuyển</button>
-            <button onclick="closeTransferModal()" style="background: #555; color: white; margin-top: 8px;">Hủy Bỏ</button>
+    <!-- MÀN HÌNH 2: TRÒ CHƠI -->
+    <div id="game-screen" class="screen">
+        <div class="status-panel">
+            <div class="status-card">
+                <h3>Lượt hiện tại</h3>
+                <div class="value" id="turn-display">1</div>
+            </div>
+            <div class="status-card">
+                <h3>Số của bạn</h3>
+                <div class="value" id="player-secret-display">--</div>
+            </div>
+        </div>
+
+        <div class="log-box" id="log-box">
+            <div class="log-item">Trận đấu bắt đầu! Hãy chọn kỹ năng hoặc đoán số của Bot.</div>
+        </div>
+
+        <div class="actions-grid">
+            <button class="action-btn" onclick="useSkill('A')"><strong>[Kỹ năng A]</strong> Kiểm tra lớn/nhỏ hơn nửa khoảng</button>
+            <button class="action-btn" onclick="useSkill('B')"><strong>[Kỹ năng B]</strong> Kiểm tra Chẵn / Lẻ</button>
+            <button class="action-btn" onclick="useSkill('C')"><strong>[Kỹ năng C]</strong> Kiểm tra chia hết cho 5 hoặc 3</button>
+            <button class="action-btn" onclick="useSkill('D')"><strong>[Kỹ năng D]</strong> Khoảng cách gần đúng (Chia dư cho 10)</button>
+        </div>
+
+        <div class="guess-section">
+            <input type="number" id="player-guess" placeholder="Đoán số của Bot...">
+            <button onclick="makeGuess()">Đoán Ngay</button>
         </div>
     </div>
+</div>
 
-    <!-- Header Thông tin -->
-    <div class="header-info">
-        <div class="user-meta">
-            <div>Người chơi: <span id="ui-username" style="color: #00ffff;">---</span></div>
-            <div>Tài khoản: <span class="balance" id="ui-balance">0</span> VNĐ</div>
-        </div>
-        <div>
-            <span>Lượt: <span id="ui-round">---</span></span>
-            <button class="btn-transfer" onclick="openTransferModal()">Chuyển Tiền</button>
-            <button class="btn-logout" onclick="logout()">Thoát</button>
-        </div>
-    </div>
+<script>
+    let maxRange = 100;
+    let playerSecret = 0;
+    let botSecret = 0;
+    let turn = 1;
+    let botMin = 1;
+    let botMax = 100;
 
-    <!-- Khung Game -->
-    <div class="game-container">
-        <div class="timer-container">
-            ⏳ <span id="ui-timer">12.0</span>s
-        </div>
+    function startGame() {
+        maxRange = parseInt(document.getElementById('range-select').value);
+        const inputVal = parseInt(document.getElementById('player-secret').value);
+
+        if (isNaN(inputVal) || inputVal < 1 || inputVal > maxRange) {
+            alert(`Vui lòng nhập số hợp lệ từ 1 đến ${maxRange}!`);
+            return;
+        }
+
+        playerSecret = inputVal;
+        botSecret = Math.floor(Math.random() * maxRange) + 1;
+        turn = 1;
+        botMin = 1;
+        botMax = maxRange;
+
+        document.getElementById('player-secret-display').textContent = playerSecret;
+        document.getElementById('turn-display').textContent = turn;
+        document.getElementById('log-box.innerHTML') = '';
+        appendLog('system', `Trận đấu bắt đầu! Bot đã chọn một số từ 1 đến ${maxRange}.`);
+
+        // Chuyển màn hình
+        document.getElementById('setup-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+    }
+
+    function appendLog(sender, text) {
+        const logBox = document.getElementById('log-box');
+        const item = document.createElement('div');
+        item.className = `log-item ${sender}`;
+        item.innerHTML = text;
+        logBox.appendChild(item);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function useSkill(type) {
+        let clue = "";
+        const mid = Math.floor(maxRange / 2);
+
+        switch(type) {
+            case 'A':
+                if (botSecret > mid) clue = `Số của Bot **lớn hơn** ${mid}.`;
+                else clue = `Số của Bot **nhỏ hơn hoặc bằng** ${mid}.`;
+                break;
+            case 'B':
+                if (botSecret % 2 === 0) clue = `Số của Bot là **số chẵn**.`;
+                else clue = `Số của Bot là **số lẻ**.`;
+                break;
+            case 'C':
+                if (botSecret % 5 === 0) clue = `Số của Bot **chia hết cho 5**.`;
+                else if (botSecret % 3 === 0) clue = `Số của Bot **chia hết cho 3** (nhưng không chia hết cho 5).`;
+                else clue = `Số của Bot **không chia hết cho cả 3 và 5**.`;
+                break;
+            case 'D':
+                const remainder = botSecret % 10;
+                clue = `Số của Bot chia 10 dư **${remainder}**.`;
+                break;
+        }
+
+        appendLog('player', `Bạn dùng Kỹ năng ${type} ➔ ${clue}`);
+        botTurn();
+    }
+
+    function makeGuess() {
+        const guessVal = parseInt(document.getElementById('player-guess').value);
+        if (isNaN(guessVal)) {
+            alert('Vui lòng nhập một con số để đoán!');
+            return;
+        }
+
+        if (guessVal === botSecret) {
+            appendLog('player', `🎉 Chúc mừng! Bạn đã đoán đúng số của Bot là <strong>${botSecret}</strong> và CHIẾN THẮNG!`);
+            endGame();
+        } else if (guessVal < botSecret) {
+            appendLog('player', `Bạn đoán ${guessVal}: ❌ Sai! Số của Bot **lớn hơn** số này.`);
+            botTurn();
+        } else {
+            appendLog('player', `Bạn đoán ${guessVal}: ❌ Sai! Số của Bot **nhỏ hơn** số này.`);
+            botTurn();
+        }
+        document.getElementById('player-guess').value = '';
+    }
+
+    function botTurn() {
+        // Bot suy luận thông minh bằng thuật toán chặt nhị phân (Binary Search) kết hợp ngẫu nhiên
+        const botGuess = Math.floor((botMin + botMax) / 2);
         
-        <div class="dice-board" id="ui-dice"></div>
-        <div class="total-score" id="ui-score">Tổng Điểm: -- (---)</div>
+        appendLog('bot', `🤖 Bot suy luận và đoán số của bạn là: <strong>${botGuess}</strong>`);
 
-        <div class="chips-container">
-            <div class="chip chip-100 active" onclick="selectChip(100000, this)">100K</div>
-            <div class="chip chip-200" onclick="selectChip(200000, this)">200K</div>
-            <div class="chip chip-500" onclick="selectChip(500000, this)">500K</div>
-            <div class="chip chip-all" onclick="selectChip('ALL', this)">ALL IN</div>
-        </div>
-
-        <div class="betting-board">
-            <div class="bet-zone" onclick="placeBet('Gà')">
-                <div class="zone-title ga-title">GÀ</div>
-                <div class="zone-desc">10 - 40 Điểm</div>
-                <div class="bet-amount" id="bet-Gà">0</div>
-            </div>
-            <div class="bet-zone" onclick="placeBet('Vịt')">
-                <div class="zone-title vit-title">VỊT</div>
-                <div class="zone-desc">41 - 59 Điểm</div>
-                <div class="bet-amount" id="bet-Vịt">0</div>
-            </div>
-            <div class="bet-zone" onclick="placeBet('Ngỗng')">
-                <div class="zone-title ngong-title">NGỖNG</div>
-                <div class="zone-desc">60 - 100 Điểm</div>
-                <div class="bet-amount" id="bet-Ngỗng">0</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lịch sử -->
-    <div class="history-container">
-        <div class="history-title">Lịch Sử Cầu (Đồng Bộ Real-Time)</div>
-        <div class="history-list" id="ui-history"></div>
-        <div class="history-title" style="margin-top: 15px;">Nhật Ký Cá Nhân & Chuyển Tiền</div>
-        <div class="log-list" id="ui-log"></div>
-    </div>
-
-    <!-- Popup Nổ Hũ -->
-    <div class="jackpot-popup" id="jackpot-popup">
-        🎉 NỔ HŨ 🎉<br>
-        <span style="font-size: 22px;" id="jackpot-msg"></span>
-    </div>
-
-    <script>
-        // --- HỆ THỐNG QUẢN LÝ USER & LOCALSTORAGE ---
-        function getUsersDB() {
-            let db = localStorage.getItem('game_users');
-            return db ? JSON.parse(db) : {};
+        if (botGuess === playerSecret) {
+            appendLog('bot', `💥 Rất tiếc! Bot đã đoán trúng số của bạn (${playerSecret}) trước. BẠN ĐÃ THUA!`);
+            endGame();
+            return;
+        } else if (botGuess < playerSecret) {
+            appendLog('bot', `🤖 Bot nhận xét: Số của bạn lớn hơn ${botGuess}. (Bot thu hẹp khoảng tìm kiếm)`);
+            botMin = Math.max(botMin, botGuess + 1);
+        } else {
+            appendLog('bot', `🤖 Bot nhận xét: Số của bạn nhỏ hơn ${botGuess}. (Bot thu hẹp khoảng tìm kiếm)`);
+            botMax = Math.min(botMax, botGuess - 1);
         }
 
-        function saveUsersDB(db) {
-            localStorage.setItem('game_users', JSON.stringify(db));
-        }
+        turn++;
+        document.getElementById('turn-display').textContent = turn;
+    }
 
-        let currentUser = localStorage.getItem('current_logged_user');
+    function endGame() {
+        setTimeout(() => {
+            alert("Trận đấu kết thúc! Nhấn OK để chơi lại.");
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('setup-screen').classList.add('active');
+        }, 500);
+    }
+</script>
 
-        function switchAuthForm(type) {
-            document.getElementById('auth-login-box').style.display = type === 'login' ? 'block' : 'none';
-            document.getElementById('auth-register-box').style.display = type === 'register' ? 'block' : 'none';
-        }
-
-        function register() {
-            const user = document.getElementById('reg-username').value.trim();
-            const pass = document.getElementById('reg-password').value.trim();
-            if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
-
-            let users = getUsersDB();
-            if(users[user]) return alert("Tên tài khoản đã tồn tại!");
-
-            users[user] = { password: pass, balance: 5000000, logs: [] };
-            saveUsersDB(users);
-            alert("Đăng ký thành công! Đã cấp 5.000.000 VNĐ. Vui lòng đăng nhập.");
-            switchAuthForm('login');
-        }
-
-        function login() {
-            const user = document.getElementById('login-username').value.trim();
-            const pass = document.getElementById('login-password').value.trim();
-            let users = getUsersDB();
-
-            if(users[user] && users[user].password === pass) {
-                currentUser = user;
-                localStorage.setItem('current_logged_user', currentUser);
-                document.getElementById('auth-modal').style.display = 'none';
-                initUserSession();
-            } else {
-                alert("Tên đăng nhập hoặc mật khẩu không đúng!");
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('current_logged_user');
-            location.reload();
-        }
-
-        function initUserSession() {
-            if(!currentUser) {
-                document.getElementById('auth-modal').style.display = 'flex';
-                return;
-            }
-            document.getElementById('auth-modal').style.display = 'none';
-            document.getElementById('ui-username').innerText = currentUser;
-            
-            let users = getUsersDB();
-            if(users[currentUser]) {
-                document.getElementById('ui-balance').innerText = users[currentUser].balance.toLocaleString();
-                renderUserLogs(users[currentUser].logs || []);
-            }
-        }
-
-        function updateUserBalance(newBalance) {
-            let users = getUsersDB();
-            if(users[currentUser]) {
-                users[currentUser].balance = newBalance;
-                saveUsersDB(users);
-                document.getElementById('ui-balance').innerText = newBalance.toLocaleString();
-            }
-        }
-
-        function getUserBalance() {
-            let users = getUsersDB();
-            return users[currentUser] ? users[currentUser].balance : 0;
-        }
-
-        // --- TÍNH NĂNG CHUYỂN TIỀN ---
-        function openTransferModal() { document.getElementById('transfer-modal').style.display = 'flex'; }
-        function closeTransferModal() { document.getElementById('transfer-modal').style.display = 'none'; }
-
-        function executeTransfer() {
-            const receiver = document.getElementById('tf-receiver').value.trim();
-            const amount = parseInt(document.getElementById('tf-amount').value);
-            
-            if(!receiver || isNaN(amount) || amount <= 0) return alert("Thông tin chuyển tiền không hợp lệ!");
-            if(receiver === currentUser) return alert("Không thể tự chuyển tiền cho chính mình!");
-
-            let users = getUsersDB();
-            if(!users[receiver]) return alert("Người nhận không tồn tại trên hệ thống!");
-
-            let senderBalance = users[currentUser].balance;
-            if(amount > senderBalance) return alert("Số dư không đủ để thực hiện giao dịch!");
-
-            // Trừ tiền người gửi, cộng tiền người nhận
-            users[currentUser].balance -= amount;
-            users[receiver].balance += amount;
-
-            let time = new Date().toLocaleTimeString();
-            let logSender = `[${time}] Chuyển ${amount.toLocaleString()} VND cho ${receiver}`;
-            let logReceiver = `[${time}] Nhận ${amount.toLocaleString()} VND từ ${currentUser}`;
-
-            users[currentUser].logs = users[currentUser].logs || [];
-            users[receiver].logs = users[receiver].logs || [];
-
-            users[currentUser].logs.unshift({ msg: logSender, type: 'transfer' });
-            users[receiver].logs.unshift({ msg: logReceiver, type: 'transfer' });
-
-            saveUsersDB(users);
-            updateUserBalance(users[currentUser].balance);
-            renderUserLogs(users[currentUser].logs);
-
-            alert(`Chuyển thành công ${amount.toLocaleString()} VNĐ tới tài khoản ${receiver}!`);
-            closeTransferModal();
-        }
-<!-- SCRIPT XỬ LÝ CHÍNH -->
-    <script>
-        // Cấu hình Firebase Realtime DB của bạn
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYKs",
-            authDomain: "gamevn-f6cc8.firebaseapp.com",
-            databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "gamevn-f6cc8",
-            storageBucket: "gamevn-f6cc8.firebasestorage.app",
-            messagingSenderId: "147617412521",
-            appId: "1:147617412521:web:8143e0c93823accc9480b8"
-        };
-
-        // Khởi tạo Firebase SDK
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
-        // Biến trạng thái toàn cục
-        let currentUser = null;
-        let selectedBetChoice = null;
-        let balanceListener = null;
-
-        // --- THUẬT TOÁN ĐỒNG BỘ GAME PRNG ---
-        function mulberry32(a) {
-            return function() {
-              var t = a += 0x6D2B79F5;
-              t = Math.imul(t ^ t >>> 15, t | 1);
-              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-              return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
-        }
-
-        const ROUND_DURATION = 12000;
-        const ROLLING_TIME = 2000;
-
-        let currentChip = 100000;
-        let bets = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
-        let activeRound = -1;
-        let isRolling = false;
-        let targetState = null;
-        let previousState = null;
-
-        function getGameState(targetRound) {
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-            let rng = mulberry32(startOfDay);
-            
-            let hist = [];
-            let r_score = 0, r_cat = "", r_dice = [];
-            let isJackpot = false;
-
-            for (let i = 0; i <= targetRound; i++) {
-                let valid = ['Gà', 'Vịt', 'Ngỗng'];
-                if (hist.length >= 7) {
-                    let last7 = hist.slice(-7);
-                    let counts = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
-                    last7.forEach(h => counts[h]++);
-                    valid = valid.filter(v => counts[v] < 5);
-                }
-                if (hist.length >= 5) {
-                    let last5 = hist.slice(-5);
-                    if (last5.every(v => v === last5[0])) valid = valid.filter(v => v !== last5[0]);
-                }
-                if (valid.length === 0) valid = ['Gà', 'Vịt', 'Ngỗng'];
-
-                let category = valid[Math.floor(rng() * valid.length)];
-                let score = 0, nổHũ = false;
-
-                if (i % 10 === 0 && i !== 0) {
-                    let jk = rng() > 0.5 ? 10 : 100;
-                    score = jk;
-                    category = jk === 10 ? 'Gà' : 'Ngỗng';
-                    nổHũ = true;
-                } else {
-                    if (category === 'Gà') score = Math.floor(rng() * 30) + 11;
-                    else if (category === 'Vịt') score = Math.floor(rng() * 19) + 41;
-                    else if (category === 'Ngỗng') score = Math.floor(rng() * 40) + 60;
-                }
-
-                if (i === targetRound) {
-                    r_score = score; r_cat = category; isJackpot = nổHũ;
-                    r_dice = [1,1,1,1,1,1,1,1,1,1];
-                    let rem = score - 10;
-                    while (rem > 0) {
-                        let idx = Math.floor(rng() * 10);
-                        if (r_dice[idx] < 10) { r_dice[idx]++; rem--; }
-                    }
-                }
-                hist.push(category);
-                if (hist.length > 20) hist.shift();
-            }
-            return { score: r_score, category: r_cat, dice: r_dice, history: hist, isJackpot: isJackpot };
-        }
-
-        // --- ĐẶT CƯỢC & HIỂN THỊ ---
-        function selectChip(amount, element) {
-            currentChip = amount;
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            element.classList.add('active');
-        }
-
-        function placeBet(category) {
-            if (!currentUser) return alert("Vui lòng đăng nhập!");
-            if (isRolling) return alert("Đang quay, không thể cược lúc này!");
-            
-            let betTypes = Object.keys(bets).filter(k => bets[k] > 0);
-            if (betTypes.length >= 2 && bets[category] === 0) {
-                return alert("Chỉ được đặt cược tối đa 2 cửa!");
-            }
-
-            let myBalance = getUserBalance();
-            let amount = currentChip === 'ALL' ? myBalance : currentChip;
-            if (amount === 0) return alert("Tài khoản của bạn đã hết tiền!");
-            if (amount > myBalance) return alert("Số dư không đủ!");
-
-            updateUserBalance(myBalance - amount);
-            bets[category] += amount;
-            document.getElementById(`bet-${category}`).innerText = bets[category].toLocaleString();
-        }
-
-        function renderDice(diceArray) {
-            const board = document.getElementById('ui-dice');
-            board.innerHTML = '';
-            diceArray.forEach(d => {
-                let div = document.createElement('div');
-                div.className = 'die'; div.innerText = d;
-                board.appendChild(div);
-            });
-        }
-
-        function renderHistory(histArray) {
-            const histBoard = document.getElementById('ui-history');
-            histBoard.innerHTML = '';
-            histArray.forEach(h => {
-                let div = document.createElement('div');
-                div.className = `hist-item hist-${h === 'Gà'?'Ga':h==='Vịt'?'Vit':'Ngong'}`;
-                div.innerText = h;
-                histBoard.appendChild(div);
-            });
-        }
-
-        function renderUserLogs(logs) {
-            const logBoard = document.getElementById('ui-log');
-            logBoard.innerHTML = '';
-            logs.forEach(l => {
-                let div = document.createElement('div');
-                let className = 'log-item ';
-                if(l.type === 'win') className += 'log-win';
-                else if(l.type === 'lose') className += 'log-lose';
-                else className += 'log-transfer';
-                div.className = className;
-                div.innerText = l.msg;
-                logBoard.appendChild(div);
-            });
-        }
-
-        function logPersonal(msg, type) {
-            let users = getUsersDB();
-            if(users[currentUser]) {
-                users[currentUser].logs = users[currentUser].logs || [];
-                users[currentUser].logs.unshift({ msg: msg, type: type });
-                saveUsersDB(users);
-                renderUserLogs(users[currentUser].logs);
-            }
-        }
-
-        function processResults(state) {
-            let totalBet = bets['Gà'] + bets['Vịt'] + bets['Ngỗng'];
-            if (totalBet === 0) return;
-
-            let myBalance = getUserBalance();
-            let time = new Date().toLocaleTimeString();
-            let msg = `[${time}] Cược ${totalBet.toLocaleString()}đ -> Ra ${state.category} (${state.score}Đ). `;
-
-            if (bets[state.category] > 0) {
-                let betWon = bets[state.category];
-                let winAmount = state.isJackpot ? betWon * 21 : betWon * 3;
-                msg += `THẮNG ${winAmount.toLocaleString()} VNĐ!`;
-                updateUserBalance(myBalance + winAmount);
-                logPersonal(msg, 'win');
-            } else {
-                msg += `THUA ${totalBet.toLocaleString()} VNĐ.`;
-                logPersonal(msg, 'lose');
-            }
-        }
-
-        function triggerJackpotAnim(winAmount) {
-            const jp = document.getElementById('jackpot-popup');
-            document.getElementById('jackpot-msg').innerText = winAmount > 0 ? `Bạn nhận thưởng: ${winAmount.toLocaleString()} VNĐ` : `Trúng hũ nhưng bạn không đặt cửa này!`;
-            jp.classList.add('show');
-            setTimeout(() => jp.classList.remove('show'), 4000);
-        }
-
-        // --- GAME LOOP MAIN ---
-        function gameLoop() {
-            const now = Date.now();
-            const startOfDay = new Date(new Date().setHours(0,0,0,0)).getTime();
-            const elapsed = now - startOfDay;
-            
-            const round = Math.floor(elapsed / ROUND_DURATION);
-            const timeRem = ROUND_DURATION - (elapsed % ROUND_DURATION);
-            
-            document.getElementById('ui-round').innerText = '#' + round;
-
-            if (round !== activeRound) {
-                if (activeRound !== -1 && targetState) {
-                    renderDice(targetState.dice);
-                    document.getElementById('ui-score').innerText = `Tổng Điểm: ${targetState.score} (${targetState.category})`;
-                    renderHistory(targetState.history);
-                    
-                    if (targetState.isJackpot) {
-                        let win = bets[targetState.category] ? bets[targetState.category] * 21 : 0;
-                        triggerJackpotAnim(win);
-                    }
-                    if(currentUser) processResults(targetState);
-                    previousState = targetState;
-                }
-
-                activeRound = round;
-                targetState = getGameState(round); 
-                isRolling = false;
-                
-                bets = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
-                document.getElementById('bet-Gà').innerText = '0';
-                document.getElementById('bet-Vịt').innerText = '0';
-                document.getElementById('bet-Ngỗng').innerText = '0';
-
-                if (!previousState) {
-                    previousState = getGameState(round - 1);
-                    renderDice(previousState.dice);
-                    document.getElementById('ui-score').innerText = `Tổng Điểm: ${previousState.score} (${previousState.category})`;
-                    renderHistory(previousState.history);
-                }
-            }
-
-            if (timeRem <= ROLLING_TIME && !isRolling) {
-                isRolling = true;
-                document.getElementById('ui-score').innerText = `Đang lắc xúc xắc...`;
-            }
-
-            if (isRolling) {
-                document.getElementById('ui-timer').innerText = "0.0";
-                const board = document.getElementById('ui-dice');
-                board.childNodes.forEach(node => {
-                    node.innerText = Math.floor(Math.random() * 10) + 1;
-                    node.style.transform = `rotate(${Math.random()*20 - 10}deg)`;
-                });
-            } else {
-                document.getElementById('ui-timer').innerText = (timeRem / 1000).toFixed(1);
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Khởi chạy
-        initUserSession();
-        requestAnimationFrame(gameLoop);
-        <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase App của tôi</title>
-</head>
-<body>
-    
-    <!-- Code HTML của bạn ở đây -->
-
-    <!-- Nhúng Firebase bằng module script -->
-    <script type="module">
-        // Import Firebase từ CDN
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-        // Cấu hình Firebase của bạn
-        const firebaseConfig = {
-          apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYks",
-          authDomain: "gamevn-f6cc8.firebaseapp.com",
-          databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
-          projectId: "gamevn-f6cc8",
-          storageBucket: "gamevn-f6cc8.firebasestorage.app",
-          messagingSenderId: "147617412521",
-          appId: "1:147617412521:web:8143e0c93823accc9480b8"
-        };
-
-        // Khởi tạo Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        console.log("Đã kết nối Firebase thành công!");
-    </script>
 </body>
 </html>
