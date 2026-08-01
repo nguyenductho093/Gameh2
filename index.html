@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Xúc Xắc - Admin: Nguyễn Đức Thọ</title>
-    <!-- Tailwind CSS CDN -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;700&display=swap');
+ <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,38 +14,6 @@
     <!-- Firebase SDK v9 compat (Chạy trực tiếp trên trình duyệt web/điện thoại, không cần npm) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800&display=swap');
-        body {
-            font-family: 'Lexend', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-            min-height: 100vh;
-            color: #f8fafc;
-        }
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.25rem;
-        }
-        .dice-box {
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-        }
-        .glow-btn {
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-            transition: all 0.2s ease;
-        }
-        .glow-btn:active {
-            transform: scale(0.96);
-        }
-    </style>
-</head>
-<body class="p-3 md:p-6 flex flex-col items-center justify-center min-h-screen">
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;700&display=swap');
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -245,201 +215,16 @@
         </div>
     </div>
 
-    <!-- SCRIPT XỬ LÝ CHÍNH -->
-    <script>
-        // Cấu hình Firebase Realtime DB của bạn
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYKs",
-            authDomain: "gamevn-f6cc8.firebaseapp.com",
-            databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "gamevn-f6cc8",
-            storageBucket: "gamevn-f6cc8.firebasestorage.app",
-            messagingSenderId: "147617412521",
-            appId: "1:147617412521:web:8143e0c93823accc9480b8"
-        };
-
-        // Khởi tạo Firebase SDK
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
-        // Biến trạng thái toàn cục
-        let currentUser = null;
-        let selectedBetChoice = null;
-        let balanceListener = null;
-
-        // 1. XỬ LÝ ĐĂNG NHẬP / TẠO TÀI KHOẢN KHÔNG BỊ LỖI
-        function handleLogin() {
-            const username = document.getElementById('usernameInput').value.trim().toLowerCase();
-            const pin = document.getElementById('pinInput').value.trim();
-
-            if (!username || !pin) {
-                alert("Vui lòng nhập đầy đủ Tên tài khoản và Mật khẩu!");
-                return;
-            }
-
-            const userRef = db.ref('users/' + username);
-
-            userRef.once('value').then(snapshot => {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    if (data.pin === pin) {
-                        initUserSession(username, data);
-                        showToast("Đăng nhập thành công!");
-                    } else {
-                        alert("Mật khẩu/PIN không chính xác! Vui lòng kiểm tra lại.");
-                    }
-                } else {
-                    // Tạo mới nếu tài khoản chưa có
-                    const newUser = {
-                        username: username,
-                        pin: pin,
-                        balance: 100000, // Tặng 100k khi mới đăng ký
-                        createdAt: Date.now()
-                    };
-                    userRef.set(newUser).then(() => {
-                        alert("Tạo tài khoản thành công! Bạn nhận được 100.000 VNĐ trải nghiệm.");
-                        initUserSession(username, newUser);
-                    });
-                }
-            }).catch(err => {
-                alert("Lỗi kết nối Firebase: " + err.message);
-            });
-        }
-
-        // Khởi tạo phiên làm việc của user
-        function initUserSession(username, userData) {
-            currentUser = { username: username, ...userData };
-
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-            document.getElementById('displayUsername').innerText = username;
-
-            // Lắng nghe biến động số dư Realtime từ Firebase
-            if (balanceListener) balanceListener.off();
-            balanceListener = db.ref('users/' + username + '/balance');
-            
-            let previousBalance = null;
-
-            balanceListener.on('value', snapshot => {
-                const currentBalance = snapshot.val() || 0;
-                
-                // Phát hiện nếu được người khác chuyển tiền tới
-                if (previousBalance !== null && currentBalance > previousBalance) {
-                    const added = currentBalance - previousBalance;
-                    showToast(`🎉 Bạn vừa nhận được +${added.toLocaleString()} VNĐ!`);
-                }
-
-                previousBalance = currentBalance;
-                currentUser.balance = currentBalance;
-                document.getElementById('displayBalance').innerText = currentBalance.toLocaleString() + ' VNĐ';
-            });
-
-            // Lắng nghe Lịch sử giao dịch liên quan đến user
-            loadTransactionHistory();
-        }
-
-        function handleLogout() {
-            if (balanceListener) balanceListener.off();
-            currentUser = null;
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-        }
-
-        // 2. CHUYỂN TIỀN LIÊN THIẾT BỊ (REALTIME P2P TRANSFER)
-        async function handleTransferMoney() {
-            const recipient = document.getElementById('recipientInput').value.trim().toLowerCase();
-            const amount = parseInt(document.getElementById('transferAmountInput').value);
-
-            if (!recipient) {
-                alert("Vui lòng nhập tên người nhận!");
-                return;
-            }
-            if (recipient === currentUser.username) {
-                alert("Không thể tự chuyển tiền cho chính mình!");
-                return;
-            }
-            if (isNaN(amount) || amount <= 0) {
-                alert("Số tiền chuyển không hợp lệ!");
-                return;
-            }
-            if (amount > currentUser.balance) {
-                alert("Số dư của bạn không đủ để thực hiện giao dịch này!");
-                return;
-            }
-
-            try {
-                // Kiểm tra tài khoản người nhận có tồn tại không
-                const recipientRef = db.ref('users/' + recipient);
-                const recipientSnap = await recipientRef.once('value');
-
-                if (!recipientSnap.exists()) {
-                    alert(`Tài khoản "${recipient}" không tồn tại trên hệ thống!`);
-                    return;
-                }
-
-                // Thực hiện giao dịch bằng Firebase Transaction
-                const senderBalRef = db.ref('users/' + currentUser.username + '/balance');
-                const recipientBalRef = db.ref('users/' + recipient + '/balance');
-
-                // Trừ tiền người gửi
-                await senderBalRef.transaction(bal => (bal || 0) - amount);
-                // Cộng tiền người nhận
-                await recipientBalRef.transaction(bal => (bal || 0) + amount);
-
-                // Ghi nhật ký giao dịch
-                const txRef = db.ref('transactions').push();
-                await txRef.set({
-                    sender: currentUser.username,
-                    recipient: recipient,
-                    amount: amount,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-
-                alert(`✅ Chuyển thành công ${amount.toLocaleString()} VNĐ cho ${recipient}!`);
-                document.getElementById('recipientInput').value = '';
-                document.getElementById('transferAmountInput').value = '';
-
-            } catch (error) {
-                alert("Lỗi giao dịch: " + error.message);
-            }
-        }
-
-        // Lấy lịch sử giao dịch
-        function loadTransactionHistory() {
-            db.ref('transactions').limitToLast(10).on('value', snapshot => {
-                const historyList = document.getElementById('historyList');
-                historyList.innerHTML = '';
-
-                if (!snapshot.exists()) {
-                    historyList.innerHTML = '<div class="text-slate-500 text-center py-2">Chưa có giao dịch nào</div>';
-                    return;
-                }
-
-                const txs = [];
-                snapshot.forEach(child => {
-                    txs.unshift(child.val());
-                });
-
-                txs.forEach(tx => {
-                    if (tx.sender === currentUser.username || tx.recipient === currentUser.username) {
-                        const isSender = tx.sender === currentUser.username;
-                        const div = document.createElement('div');
-                        div.className = `p-2 rounded-lg flex justify-between items-center ${isSender ? 'bg-red-900/30 text-red-300' : 'bg-emerald-900/30 text-emerald-300'}`;
-                        div.innerHTML = `
-                            <div>
-                                <span>${isSender ? 'Chuyển tới: ' + tx.recipient : 'Nhận từ: ' + tx.sender}</span>
-                            </div>
-                            <div class="font-bold">
-                                ${isSender ? '-' : '+'}${tx.amount.toLocaleString()}đ
-                            </div>
-                        `;
-                        historyList.appendChild(div);
-                    }
-                });
-            });
-        }
+    <!-- Modal Chuyển tiền -->
+    <div class="modal-overlay" id="transfer-modal" style="display: none;">
+        <div class="auth-card">
+            <h2>CHUYỂN TIỀN</h2>
+            <input type="text" id="tf-receiver" placeholder="Tên người nhận">
+            <input type="number" id="tf-amount" placeholder="Số tiền (VNĐ)">
+            <button onclick="executeTransfer()">Xác Nhận Chuyển</button>
+            <button onclick="closeTransferModal()" style="background: #555; color: white; margin-top: 8px;">Hủy Bỏ</button>
+        </div>
+    </div>
 
     <!-- Header Thông tin -->
     <div class="header-info">
@@ -622,6 +407,29 @@
             alert(`Chuyển thành công ${amount.toLocaleString()} VNĐ tới tài khoản ${receiver}!`);
             closeTransferModal();
         }
+<!-- SCRIPT XỬ LÝ CHÍNH -->
+    <script>
+        // Cấu hình Firebase Realtime DB của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYKs",
+            authDomain: "gamevn-f6cc8.firebaseapp.com",
+            databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "gamevn-f6cc8",
+            storageBucket: "gamevn-f6cc8.firebasestorage.app",
+            messagingSenderId: "147617412521",
+            appId: "1:147617412521:web:8143e0c93823accc9480b8"
+        };
+
+        // Khởi tạo Firebase SDK
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // Biến trạng thái toàn cục
+        let currentUser = null;
+        let selectedBetChoice = null;
+        let balanceListener = null;
 
         // --- THUẬT TOÁN ĐỒNG BỘ GAME PRNG ---
         function mulberry32(a) {
@@ -854,33 +662,11 @@
 
             requestAnimationFrame(gameLoop);
         }
- // Chuyển Tab giao diện
-        function switchTab(tab) {
-            if (tab === 'game') {
-                document.getElementById('tabGame').classList.remove('hidden');
-                document.getElementById('tabTransfer').classList.add('hidden');
-                document.getElementById('tabGameBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white';
-                document.getElementById('tabTransferBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300';
-            } else {
-                document.getElementById('tabGame').classList.add('hidden');
-                document.getElementById('tabTransfer').classList.remove('hidden');
-                document.getElementById('tabGameBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300';
-                document.getElementById('tabTransferBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white';
-            }
-        }
 
-        // Hiển thị Notification Toast
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3500);
-        }
-    </script>
-    <!DOCTYPE html>
-<html lang="vi">
+        // Khởi chạy
+        initUserSession();
+        requestAnimationFrame(gameLoop);
+        <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -912,9 +698,6 @@
         const database = getDatabase(app);
 
         console.log("Đã kết nối Firebase thành công!");
-        // Khởi chạy
-        initUserSession();
-        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
