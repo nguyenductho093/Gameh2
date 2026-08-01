@@ -3,110 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đấu Trí Đoán Số</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
-        h1, h2 { text-align: center; color: #333; }
-        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-        input[type="number"] { width: 100px; padding: 8px; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
-        button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; margin: 5px; }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .log-box { height: 200px; overflow-y: auto; background: #222; color: #0f0; padding: 10px; font-family: monospace; border-radius: 5px; font-size: 14px; }
-        #gamePlay { display: none; }
-    </style>
+    <title>Game Đấu Trí Số - Number Mind Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <h1>🧠 Đấu Trí Đoán Số</h1>
-    
-    <!-- Màn hình thiết lập -->
-    <div id="setup" class="section">
-        <h2>Chọn số bí mật của bạn (1 - 100)</h2>
-        <div style="text-align: center;">
-            <input type="number" id="playerSecret" min="1" max="100" placeholder="VD: 37">
-            <button onclick="startGame()">Bắt Đầu Game</button>
+    <div class="container">
+        <header>
+            <h1>⚡ ĐẤU TRÍ SỐ ⚡</h1>
+            <p>Trò chơi suy luận logic với AI</p>
+        </header>
+
+        <div id="setup-screen" class="screen setup-box">
+            <h2 class="setup-title">THIẾT LẬP TRẬN ĐẤU</h2>
+            <p class="setup-desc">
+                Chọn một con số bí mật từ <b>1 đến 100</b>. Bot cũng sẽ ngẫu nhiên chọn một con số bí mật. Hãy dùng kỹ năng để suy luận ra số của Bot trước!
+            </p>
+
+            <div class="input-group">
+                <label for="player-number">Số bí mật của bạn (1 - 100):</label>
+                <input type="number" id="player-number" min="1" max="100" placeholder="Ví dụ: 42">
+            </div>
+
+            <div class="input-group">
+                <label for="bot-difficulty">Mức độ suy luận của Bot:</label>
+                <select id="bot-difficulty">
+                    <option value="easy">Dễ (Bot đoán ngẫu nhiên)</option>
+                    <option value="medium" selected>Trung bình (Thuật toán Nhị phân)</option>
+                    <option value="hard">Khó (Thuật toán Tối ưu)</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="startGame()">BẮT ĐẦU ĐẤU TRÍ</button>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div class="dashboard-header">
+                <div class="turn-badge">LƯỢT <span id="current-turn">1</span> / <span id="max-turn">10</span></div>
+                <div id="game-status" class="status-text">Đang đợi bạn chọn hành động...</div>
+            </div>
+
+            <div class="vs-container">
+                <div class="player-card user">
+                    <div class="avatar">👨‍💻</div>
+                    <div class="card-title">BẠN</div>
+                    <div class="secret-val" id="disp-user-secret">--</div>
+                </div>
+                <div class="player-card bot">
+                    <div class="avatar">🤖</div>
+                    <div class="card-title">BOT (AI)</div>
+                    <div class="secret-val">❓❓</div>
+                </div>
+            </div>
+
+            <div class="skills-title">
+                <span>🎯 HÀNH ĐỘNG / KỸ NĂNG</span>
+            </div>
+
+            <div class="skills-grid">
+                <div class="skill-btn" onclick="openSkillModal('A')">
+                    <div class="skill-header skill-a">
+                        <span>A. Định Vị Mốc</span>
+                        <span>🔍</span>
+                    </div>
+                    <div class="skill-desc">Kiểm tra số của Bot lớn hơn hay nhỏ hơn một mốc X.</div>
+                </div>
+
+                <div class="skill-btn" onclick="useSkillB()">
+                    <div class="skill-header skill-b">
+                        <span>B. Chẵn / Lẻ</span>
+                        <span>⚖️</span>
+                    </div>
+                    <div class="skill-desc">Kiểm tra xem số của Bot là số Chẵn hay Lẻ.</div>
+                </div>
+
+                <div class="skill-btn" onclick="useSkillC()">
+                    <div class="skill-header skill-c">
+                        <span>C. Chia Dư 3</span>
+                        <span>➗</span>
+                    </div>
+                    <div class="skill-desc">Kiểm tra số của Bot chia cho 3 dư mấy (0, 1, hoặc 2).</div>
+                </div>
+
+                <div class="skill-btn" onclick="openSkillModal('D')">
+                    <div class="skill-header skill-d">
+                        <span>D. Đoán Số Trực Tiếp</span>
+                        <span>🎯</span>
+                    </div>
+                    <div class="skill-desc">Đoán chính xác con số. Sai sẽ được báo Lớn hơn / Nhỏ hơn.</div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <div class="log-title">📜 Nhật Ký Trận Đấu</div>
+                <ul class="log-list" id="battle-log">
+                    </ul>
+            </div>
         </div>
     </div>
 
-    <!-- Màn hình chơi -->
-    <div id="gamePlay">
-        <div class="section">
-            <h3>Dùng Kỹ Năng (Tìm manh mối)</h3>
-            <div class="grid">
-                <button onclick="useSkill('A')">A: Số đó chẵn hay lẻ?</button>
-                <button onclick="useSkill('B')">B: Số đó > 50 không?</button>
-                <button onclick="useSkill('C')">C: Chia 3 dư mấy?</button>
-                <button onclick="useSkill('D')">D: Có chia hết cho 5?</button>
-            </div>
-        </div>
+    <div id="action-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div id="modal-skill-icon" class="modal-icon">🔍</div>
+            <div id="modal-skill-title" class="modal-title">ĐỊNH VỊ MỐC</div>
+            <div id="modal-skill-desc" class="modal-body">Nhập một mốc số X để kiểm tra xem số của Bot lớn hơn hay nhỏ hơn.</div>
 
-        <div class="section">
-            <h3>Đoán số của Bot</h3>
-            <div style="text-align: center;">
-                <input type="number" id="playerGuess" min="1" max="100" placeholder="Số của Bot...">
-                <button onclick="makeGuess()">Đoán Ngay!</button>
+            <div class="modal-input-group">
+                <input type="number" id="modal-input-val" min="1" max="100" placeholder="Nhập số (1-100)">
             </div>
-        </div>
 
-        <div class="section">
-            <h3>Lịch sử trận đấu</h3>
-            <div id="log" class="log-box"></div>
+            <div class="modal-actions">
+                <button class="btn" onclick="submitModalSkill()">XÁC NHẬN</button>
+                <button class="btn btn-cancel" onclick="closeModal()">HỦY</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    let playerSecret, botSecret;
-    let botMin = 1, botMax = 100; // Trí tuệ của Bot (Khoanh vùng)
-    let gameOver = false;
+    <div id="gameover-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div id="go-icon" class="modal-icon">🏆</div>
+            <div id="go-title" class="modal-title">BẠN ĐÃ THẮNG!</div>
+            <div id="go-desc" class="modal-body">Bạn đã suy luận chính xác số của Bot.</div>
+            <button class="btn" onclick="restartGame()">CHƠI LẠI</button>
+        </div>
+    </div>
 
-    function logMessage(msg) {
-        const logBox = document.getElementById('log');
-        logBox.innerHTML += `> ${msg}<br>`;
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    function startGame() {
-        const input = document.getElementById('playerSecret').value;
-        if (!input || input < 1 || input > 100) {
-            alert("Vui lòng nhập một số từ 1 đến 100!");
-            return;
-        }
-        playerSecret = parseInt(input);
-        botSecret = Math.floor(Math.random() * 100) + 1;
-        
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('gamePlay').style.display = 'block';
-        logMessage("Trận đấu bắt đầu! Bot đã chọn xong số.");
-    }
-
-    // Xử lý kỹ năng của người chơi
-    function useSkill(skill) {
-        if(gameOver) return;
-        let response = "";
-        switch(skill) {
-            case 'A': response = (botSecret % 2 === 0) ? "Số của bot là số CHẴN." : "Số của bot là số LẺ."; break;
-            case 'B': response = (botSecret > 50) ? "Số của bot LỚN HƠN 50." : "Số của bot NHỎ HƠN HOẶC BẰNG 50."; break;
-            case 'C': response = `Số của bot chia 3 dư ${botSecret % 3}.`; break;
-            case 'D': response = (botSecret % 5 === 0) ? "Số của bot CHIA HẾT cho 5." : "Số của bot KHÔNG chia hết cho 5."; break;
-        }
-        logMessage(`👤 Bạn dùng kỹ năng ${skill}: ${response}`);
-        botTurn();
-    }
-
-    // Xử lý người chơi đoán
-    function makeGuess() {
-        if(gameOver) return;
-        const guess = parseInt(document.getElementById('playerGuess').value);
-        if(!guess) return;
-
-        logMessage(`👤 Bạn đoán số của Bot là: ${guess}`);
-        if (guess === botSecret) {
-            logMessage(`🎉 CHÚC MỪNG! Bạn đã đoán đúng số ${botSecret} và chiến thắng!`);
+    <script src="script.js"></script>
+</body>
+</html>
             gameOver = true;
             return;
         } else {
