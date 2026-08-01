@@ -3,553 +3,918 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Xúc Xắc Anime - Admin Nguyễn Đức Thọ</title>
+    <title>Game Xúc Xắc - Admin: Nguyễn Đức Thọ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK v9 compat (Chạy trực tiếp trên trình duyệt web/điện thoại, không cần npm) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
-        /* CSS HỆ THỐNG GIAO DIỆN */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+        }
+        .dice-box {
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+        .glow-btn {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            transition: all 0.2s ease;
+        }
+        .glow-btn:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col items-center justify-center min-h-screen">
 
-        body, html {
-            margin: 0; padding: 0; height: 100%; font-family: 'Roboto', sans-serif;
-            background: url('https://images.unsplash.com/photo-1578592391266-932f74127045?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
-            background-size: cover; color: #fff;
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: white;
+            background: url('https://images.wallpaperscraft.com/image/single/dragon_art_anime_128919_1920x1080.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Lớp phủ tối để dễ nhìn chữ */
         .overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.7); z-index: 0;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
         }
 
-        /* Tên Admin phát sáng */
-        .admin-watermark {
-            position: fixed; bottom: 15px; right: 20px; font-size: 24px; font-weight: 900;
-            color: #fff; z-index: 9999; pointer-events: none;
-            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000;
+        /* Admin Text Glow */
+        .admin-text {
+            position: fixed;
+            top: 15px;
+            left: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff;
+            z-index: 1000;
             animation: pulse 1.5s infinite alternate;
         }
-        @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; text-shadow: 0 0 20px #ff0000, 0 0 30px #ff00ff, 0 0 40px #ff00ff; } }
 
-        .container {
-            position: relative; z-index: 1; display: flex; flex-direction: column;
-            height: 100vh; padding: 20px; box-sizing: border-box;
+        @keyframes pulse {
+            from { text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff; }
+            to { text-shadow: 0 0 10px #00ffff, 0 0 25px #00ffff, 0 0 40px #00ffff; }
         }
 
-        /* Các Panel */
-        .panel {
-            background: rgba(20, 20, 25, 0.85); border: 2px solid #444; border-radius: 10px;
-            padding: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        /* Auth Modal (Đăng nhập / Đăng ký) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000;
         }
-        
-        .hidden { display: none !important; }
-
-        /* Màn hình Auth */
-        #auth-screen {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
+        .auth-card {
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            width: 350px;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            text-align: center;
         }
-        .auth-box { width: 350px; text-align: center; }
-        .auth-box input {
-            width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; outline: none; box-sizing: border-box;
+        .auth-card h2 { margin-bottom: 20px; font-family: 'Orbitron', sans-serif; color: #ffcc00; }
+        .auth-card input {
+            width: 100%; padding: 12px; margin: 8px 0;
+            border-radius: 8px; border: 1px solid #444;
+            background: #111; color: #fff; font-size: 15px;
         }
-        .btn {
-            padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer;
-            font-weight: bold; background: #e50914; color: white; transition: 0.3s;
+        .auth-card button {
+            width: 100%; padding: 12px; margin-top: 15px;
+            border-radius: 8px; border: none;
+            background: linear-gradient(45deg, #00ffff, #0088cc);
+            color: #000; font-weight: bold; font-size: 16px; cursor: pointer;
         }
-        .btn:hover { background: #ff2030; box-shadow: 0 0 10px #ff2030; }
-        .btn:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
+        .auth-card button:hover { opacity: 0.9; }
+        .auth-switch { margin-top: 15px; font-size: 13px; color: #aaa; cursor: pointer; }
+        .auth-switch span { color: #00ffff; text-decoration: underline; }
 
-        /* Màn hình Game */
-        #game-screen { display: flex; gap: 20px; height: 100%; }
-        .main-game { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .side-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        /* Header / Top Info */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%; max-width: 1000px;
+            margin-top: 60px; padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffcc00; border-radius: 15px;
+            box-shadow: 0 0 15px #ffcc00;
+            font-size: 18px; font-weight: bold;
+        }
+        .user-meta { display: flex; flex-direction: column; gap: 5px; }
+        .balance { color: #00ff00; }
+        .btn-transfer, .btn-logout {
+            padding: 8px 15px; border-radius: 6px; border: none;
+            font-weight: bold; cursor: pointer; margin-left: 10px;
+        }
+        .btn-transfer { background: #ff9900; color: black; }
+        .btn-logout { background: #ff3333; color: white; }
 
-        /* Thanh thông tin người chơi */
-        .player-info { display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
-        .balance { color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
+        /* Game Board */
+        .game-container {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 1000px; margin-top: 20px;
+        }
+        .timer-container {
+            font-family: 'Orbitron', sans-serif; font-size: 36px;
+            color: #ff3333; text-shadow: 0 0 10px #ff3333; margin-bottom: 15px;
+        }
+        .dice-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 15px; }
+        .die {
+            width: 55px; height: 55px;
+            background: linear-gradient(135deg, #ffffff, #cccccc);
+            color: black; font-size: 26px; font-weight: 900;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 10px; box-shadow: inset 0 0 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.8);
+            border: 2px solid #444;
+        }
+        .total-score {
+            font-size: 28px; font-weight: bold; color: #ffd700;
+            text-shadow: 0 0 10px #ffd700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif;
+        }
 
-        /* Khu vực Xúc xắc & Thời gian */
-        .board { text-align: center; position: relative; padding: 30px; border: 2px solid #00d2ff; box-shadow: 0 0 15px #00d2ff inset; }
-        .timer-display { font-size: 50px; font-weight: 900; color: #ffeb3b; text-shadow: 0 0 15px #ffeb3b; margin-bottom: 20px;}
-        .dice-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .die { width: 40px; height: 40px; background: #fff; color: #000; font-size: 24px; font-weight: bold; line-height: 40px; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .jackpot-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; color: #ff00ff; text-shadow: 0 0 30px #ff00ff; font-weight: 900; display: none; z-index: 10;}
+        /* Betting Area */
+        .betting-board { display: flex; gap: 15px; width: 100%; justify-content: center; margin-bottom: 20px; }
+        .bet-zone {
+            flex: 1; background: rgba(20, 20, 20, 0.85);
+            border: 3px solid #555; border-radius: 15px; padding: 15px;
+            text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .bet-zone:hover { background: rgba(40, 40, 40, 0.9); }
+        .zone-title { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .ga-title { color: #ff9900; }
+        .vit-title { color: #33ccff; }
+        .ngong-title { color: #ff33cc; }
+        .zone-desc { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+        .bet-amount { font-size: 20px; color: #00ff00; font-weight: bold; }
 
-        /* Bảng Cược */
-        .bet-types { display: flex; justify-content: space-around; margin: 15px 0; }
-        .bet-btn { padding: 15px; width: 30%; font-size: 20px; background: #333; border: 2px solid #555; }
-        .bet-btn.active { border-color: #00d2ff; background: rgba(0, 210, 255, 0.3); box-shadow: 0 0 10px #00d2ff; }
-        
-        .bet-amounts { display: flex; justify-content: space-around; margin-bottom: 15px;}
-        .amount-btn { padding: 10px; width: 22%; background: #222; border: 1px solid #777;}
-        .amount-btn.active { background: #4caf50; border-color: #00ff00; }
+        /* Chips */
+        .chips-container { display: flex; gap: 12px; margin-bottom: 20px; }
+        .chip {
+            width: 70px; height: 70px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 16px; cursor: pointer;
+            border: 3px dashed white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: 0.2s;
+        }
+        .chip:hover, .chip.active { transform: scale(1.1); border-style: solid; box-shadow: 0 0 15px #fff; }
+        .chip-100 { background: #3498db; }
+        .chip-200 { background: #9b59b6; }
+        .chip-500 { background: #e67e22; }
+        .chip-all { background: #e74c3c; font-size: 14px; }
 
-        .action-bet { width: 100%; padding: 15px; font-size: 20px; background: #ff9800; }
+        /* History & Logs */
+        .history-container {
+            width: 90%; max-width: 1000px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px; padding: 15px; margin-bottom: 40px; border: 1px solid #444;
+        }
+        .history-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #555; padding-bottom: 5px; }
+        .history-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .hist-item { padding: 4px 10px; border-radius: 5px; font-weight: bold; font-size: 13px; }
+        .hist-Ga { background: #ff9900; color: black; }
+        .hist-Vit { background: #33ccff; color: black; }
+        .hist-Ngong { background: #ff33cc; color: white; }
 
-        /* Lịch sử */
-        .history-box { flex: 1; overflow-y: auto; font-size: 14px; }
-        .history-item { padding: 5px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
-        .win { color: #00ff00; } .lose { color: #ff4444; }
+        .log-list { max-height: 120px; overflow-y: auto; font-size: 13px; }
+        .log-item { padding: 4px 0; border-bottom: 1px solid #333; }
+        .log-win { color: #00ff00; }
+        .log-lose { color: #ff3333; }
+        .log-transfer { color: #ffcc00; }
 
-        /* Chat & Chuyển tiền */
-        .social-box { flex: 1; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; border: 1px solid #555; padding: 10px; margin-bottom: 10px; font-size: 14px; }
-        .chat-input { display: flex; gap: 5px; }
-        .chat-input input { flex: 1; padding: 8px; border: none; border-radius: 3px; }
-        
-        .transfer-box { padding-top: 15px; border-top: 1px solid #555; }
-        .transfer-box input { width: 100%; padding: 8px; margin-bottom: 5px; box-sizing: border-box; }
+        /* Popup Jackpot */
+        .jackpot-popup {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            background: radial-gradient(circle, #ffcc00, #ff0000);
+            padding: 30px 60px; border-radius: 20px; text-align: center;
+            font-size: 40px; font-weight: 900; color: white;
+            z-index: 2000; box-shadow: 0 0 50px #ffcc00;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .jackpot-popup.show { transform: translate(-50%, -50%) scale(1); }
     </style>
-    <!-- Thư viện Firebase v8 tương thích (Dễ tích hợp 1 file) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-    <div class="overlay"></div>
-    <div class="admin-watermark">Admin : Nguyễn Đức Thọ</div>
 
-    <div class="container">
-        <!-- MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
-        <div id="auth-screen" class="panel">
-            <div class="auth-box">
-                <h2>CỔNG GAME XÚC XẮC</h2>
-                <input type="email" id="email" placeholder="Email của bạn">
-                <input type="password" id="password" placeholder="Mật khẩu">
-                <button class="btn" onclick="login()">Đăng Nhập</button>
-                <button class="btn" style="background:#00d2ff; color:#000;" onclick="register()">Đăng Ký</button>
-                <p id="auth-error" style="color: #ff4444; font-size: 12px;"></p>
-            </div>
+    <div class="overlay"></div>
+    <div class="admin-text">Admin : Nguyễn Đức Thọ</div>
+
+    <!-- Modal Đăng nhập / Đăng ký -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="auth-card" id="auth-login-box">
+            <h2>ĐĂNG NHẬP</h2>
+            <input type="text" id="login-username" placeholder="Tên tài khoản">
+            <input type="password" id="login-password" placeholder="Mật khẩu">
+            <button onclick="login()">Vào Trò Chơi</button>
+            <div class="auth-switch" onclick="switchAuthForm('register')">Chưa có tài khoản? <span>Đăng ký ngay</span></div>
+        </div>
+        <div class="auth-card" id="auth-register-box" style="display: none;">
+            <h2>ĐĂNG KÝ</h2>
+            <input type="text" id="reg-username" placeholder="Tên tài khoản mới">
+            <input type="password" id="reg-password" placeholder="Mật khẩu">
+            <button onclick="register()">Tạo Tài Khoản (Nhận 5M)</button>
+            <div class="auth-switch" onclick="switchAuthForm('login')">Đã có tài khoản? <span>Đăng nhập</span></div>
+        </div>
+    </div>
+
+    <!-- SCRIPT XỬ LÝ CHÍNH -->
+    <script>
+        // Cấu hình Firebase Realtime DB của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYKs",
+            authDomain: "gamevn-f6cc8.firebaseapp.com",
+            databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "gamevn-f6cc8",
+            storageBucket: "gamevn-f6cc8.firebasestorage.app",
+            messagingSenderId: "147617412521",
+            appId: "1:147617412521:web:8143e0c93823accc9480b8"
+        };
+
+        // Khởi tạo Firebase SDK
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // Biến trạng thái toàn cục
+        let currentUser = null;
+        let selectedBetChoice = null;
+        let balanceListener = null;
+
+        // 1. XỬ LÝ ĐĂNG NHẬP / TẠO TÀI KHOẢN KHÔNG BỊ LỖI
+        function handleLogin() {
+            const username = document.getElementById('usernameInput').value.trim().toLowerCase();
+            const pin = document.getElementById('pinInput').value.trim();
+
+            if (!username || !pin) {
+                alert("Vui lòng nhập đầy đủ Tên tài khoản và Mật khẩu!");
+                return;
+            }
+
+            const userRef = db.ref('users/' + username);
+
+            userRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.pin === pin) {
+                        initUserSession(username, data);
+                        showToast("Đăng nhập thành công!");
+                    } else {
+                        alert("Mật khẩu/PIN không chính xác! Vui lòng kiểm tra lại.");
+                    }
+                } else {
+                    // Tạo mới nếu tài khoản chưa có
+                    const newUser = {
+                        username: username,
+                        pin: pin,
+                        balance: 100000, // Tặng 100k khi mới đăng ký
+                        createdAt: Date.now()
+                    };
+                    userRef.set(newUser).then(() => {
+                        alert("Tạo tài khoản thành công! Bạn nhận được 100.000 VNĐ trải nghiệm.");
+                        initUserSession(username, newUser);
+                    });
+                }
+            }).catch(err => {
+                alert("Lỗi kết nối Firebase: " + err.message);
+            });
+        }
+
+        // Khởi tạo phiên làm việc của user
+        function initUserSession(username, userData) {
+            currentUser = { username: username, ...userData };
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('displayUsername').innerText = username;
+
+            // Lắng nghe biến động số dư Realtime từ Firebase
+            if (balanceListener) balanceListener.off();
+            balanceListener = db.ref('users/' + username + '/balance');
+            
+            let previousBalance = null;
+
+            balanceListener.on('value', snapshot => {
+                const currentBalance = snapshot.val() || 0;
+                
+                // Phát hiện nếu được người khác chuyển tiền tới
+                if (previousBalance !== null && currentBalance > previousBalance) {
+                    const added = currentBalance - previousBalance;
+                    showToast(`🎉 Bạn vừa nhận được +${added.toLocaleString()} VNĐ!`);
+                }
+
+                previousBalance = currentBalance;
+                currentUser.balance = currentBalance;
+                document.getElementById('displayBalance').innerText = currentBalance.toLocaleString() + ' VNĐ';
+            });
+
+            // Lắng nghe Lịch sử giao dịch liên quan đến user
+            loadTransactionHistory();
+        }
+
+        function handleLogout() {
+            if (balanceListener) balanceListener.off();
+            currentUser = null;
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        // 2. CHUYỂN TIỀN LIÊN THIẾT BỊ (REALTIME P2P TRANSFER)
+        async function handleTransferMoney() {
+            const recipient = document.getElementById('recipientInput').value.trim().toLowerCase();
+            const amount = parseInt(document.getElementById('transferAmountInput').value);
+
+            if (!recipient) {
+                alert("Vui lòng nhập tên người nhận!");
+                return;
+            }
+            if (recipient === currentUser.username) {
+                alert("Không thể tự chuyển tiền cho chính mình!");
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                alert("Số tiền chuyển không hợp lệ!");
+                return;
+            }
+            if (amount > currentUser.balance) {
+                alert("Số dư của bạn không đủ để thực hiện giao dịch này!");
+                return;
+            }
+
+            try {
+                // Kiểm tra tài khoản người nhận có tồn tại không
+                const recipientRef = db.ref('users/' + recipient);
+                const recipientSnap = await recipientRef.once('value');
+
+                if (!recipientSnap.exists()) {
+                    alert(`Tài khoản "${recipient}" không tồn tại trên hệ thống!`);
+                    return;
+                }
+
+                // Thực hiện giao dịch bằng Firebase Transaction
+                const senderBalRef = db.ref('users/' + currentUser.username + '/balance');
+                const recipientBalRef = db.ref('users/' + recipient + '/balance');
+
+                // Trừ tiền người gửi
+                await senderBalRef.transaction(bal => (bal || 0) - amount);
+                // Cộng tiền người nhận
+                await recipientBalRef.transaction(bal => (bal || 0) + amount);
+
+                // Ghi nhật ký giao dịch
+                const txRef = db.ref('transactions').push();
+                await txRef.set({
+                    sender: currentUser.username,
+                    recipient: recipient,
+                    amount: amount,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                alert(`✅ Chuyển thành công ${amount.toLocaleString()} VNĐ cho ${recipient}!`);
+                document.getElementById('recipientInput').value = '';
+                document.getElementById('transferAmountInput').value = '';
+
+            } catch (error) {
+                alert("Lỗi giao dịch: " + error.message);
+            }
+        }
+
+        // Lấy lịch sử giao dịch
+        function loadTransactionHistory() {
+            db.ref('transactions').limitToLast(10).on('value', snapshot => {
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    historyList.innerHTML = '<div class="text-slate-500 text-center py-2">Chưa có giao dịch nào</div>';
+                    return;
+                }
+
+                const txs = [];
+                snapshot.forEach(child => {
+                    txs.unshift(child.val());
+                });
+
+                txs.forEach(tx => {
+                    if (tx.sender === currentUser.username || tx.recipient === currentUser.username) {
+                        const isSender = tx.sender === currentUser.username;
+                        const div = document.createElement('div');
+                        div.className = `p-2 rounded-lg flex justify-between items-center ${isSender ? 'bg-red-900/30 text-red-300' : 'bg-emerald-900/30 text-emerald-300'}`;
+                        div.innerHTML = `
+                            <div>
+                                <span>${isSender ? 'Chuyển tới: ' + tx.recipient : 'Nhận từ: ' + tx.sender}</span>
+                            </div>
+                            <div class="font-bold">
+                                ${isSender ? '-' : '+'}${tx.amount.toLocaleString()}đ
+                            </div>
+                        `;
+                        historyList.appendChild(div);
+                    }
+                });
+            });
+        }
+
+    <!-- Header Thông tin -->
+    <div class="header-info">
+        <div class="user-meta">
+            <div>Người chơi: <span id="ui-username" style="color: #00ffff;">---</span></div>
+            <div>Tài khoản: <span class="balance" id="ui-balance">0</span> VNĐ</div>
+        </div>
+        <div>
+            <span>Lượt: <span id="ui-round">---</span></span>
+            <button class="btn-transfer" onclick="openTransferModal()">Chuyển Tiền</button>
+            <button class="btn-logout" onclick="logout()">Thoát</button>
+        </div>
+    </div>
+
+    <!-- Khung Game -->
+    <div class="game-container">
+        <div class="timer-container">
+            ⏳ <span id="ui-timer">12.0</span>s
+        </div>
+        
+        <div class="dice-board" id="ui-dice"></div>
+        <div class="total-score" id="ui-score">Tổng Điểm: -- (---)</div>
+
+        <div class="chips-container">
+            <div class="chip chip-100 active" onclick="selectChip(100000, this)">100K</div>
+            <div class="chip chip-200" onclick="selectChip(200000, this)">200K</div>
+            <div class="chip chip-500" onclick="selectChip(500000, this)">500K</div>
+            <div class="chip chip-all" onclick="selectChip('ALL', this)">ALL IN</div>
         </div>
 
-        <!-- MÀN HÌNH GAME CHÍNH -->
-        <div id="game-screen" class="hidden">
-            <div class="main-game">
-                <!-- Thông tin -->
-                <div class="panel player-info">
-                    <span id="player-email">Loading...</span>
-                    <span>Số dư: <span class="balance" id="player-balance">0 VNĐ</span></span>
-                    <button class="btn" style="background: #555;" onclick="logout()">Đăng Xuất</button>
-                </div>
-
-                <!-- Bàn chơi xúc xắc -->
-                <div class="panel board">
-                    <div class="timer-display" id="timer">12s</div>
-                    <div id="jackpot-alert" class="jackpot-text">NỔ HŨ!</div>
-                    <h3 id="current-result-text">Đang chờ phiên mới...</h3>
-                    <div class="dice-container" id="dice-container">
-                        <!-- Xúc xắc render tại đây -->
-                    </div>
-                </div>
-
-                <!-- Đặt cược -->
-                <div class="panel">
-                    <h3 style="margin-top:0;">Chọn Cửa Cược:</h3>
-                    <div class="bet-types">
-                        <button class="btn bet-btn" onclick="selectType('Gà')" id="btn-Ga">GÀ (10-40)</button>
-                        <button class="btn bet-btn" onclick="selectType('Vịt')" id="btn-Vit">VỊT (41-59)</button>
-                        <button class="btn bet-btn" onclick="selectType('Ngỗng')" id="btn-Ngong">NGỖNG (60-100)</button>
-                    </div>
-                    <div class="bet-amounts">
-                        <button class="btn amount-btn" onclick="selectAmount(100000)" id="amt-100k">100k</button>
-                        <button class="btn amount-btn" onclick="selectAmount(200000)" id="amt-200k">200k</button>
-                        <button class="btn amount-btn" onclick="selectAmount(500000)" id="amt-500k">500k</button>
-                        <button class="btn amount-btn" onclick="selectAmount('ALL')" id="amt-all">ALL IN</button>
-                    </div>
-                    <button class="btn action-bet" id="btn-place-bet" onclick="placeBet()">ĐẶT CƯỢC</button>
-                    <div id="bet-status" style="margin-top: 10px; text-align: center; color: #00d2ff;">Chưa đặt cược</div>
-                </div>
+        <div class="betting-board">
+            <div class="bet-zone" onclick="placeBet('Gà')">
+                <div class="zone-title ga-title">GÀ</div>
+                <div class="zone-desc">10 - 40 Điểm</div>
+                <div class="bet-amount" id="bet-Gà">0</div>
             </div>
-
-            <div class="side-panel">
-                <!-- Lịch sử cá nhân -->
-                <div class="panel history-box">
-                    <h3 style="margin-top:0;">Lịch sử Cược</h3>
-                    <div id="history-list"></div>
-                </div>
-
-                <!-- Chat & Chuyển Tiền -->
-                <div class="panel social-box">
-                    <h3 style="margin-top:0;">Kênh Chat Tổng</h3>
-                    <div class="chat-messages" id="chat-messages"></div>
-                    <div class="chat-input">
-                        <input type="text" id="chat-input-text" placeholder="Nhập tin nhắn...">
-                        <button class="btn" style="margin:0;" onclick="sendMessage()">Gửi</button>
-                    </div>
-                    
-                    <div class="transfer-box">
-                        <h4 style="margin:5px 0;">Chuyển tiền cho người chơi</h4>
-                        <input type="email" id="transfer-email" placeholder="Email người nhận">
-                        <input type="number" id="transfer-amount" placeholder="Số tiền VNĐ">
-                        <button class="btn" style="width:100%; margin:0;" onclick="transferMoney()">Chuyển Tiền</button>
-                    </div>
-                </div>
+            <div class="bet-zone" onclick="placeBet('Vịt')">
+                <div class="zone-title vit-title">VỊT</div>
+                <div class="zone-desc">41 - 59 Điểm</div>
+                <div class="bet-amount" id="bet-Vịt">0</div>
+            </div>
+            <div class="bet-zone" onclick="placeBet('Ngỗng')">
+                <div class="zone-title ngong-title">NGỖNG</div>
+                <div class="zone-desc">60 - 100 Điểm</div>
+                <div class="bet-amount" id="bet-Ngỗng">0</div>
             </div>
         </div>
     </div>
 
+    <!-- Lịch sử -->
+    <div class="history-container">
+        <div class="history-title">Lịch Sử Cầu (Đồng Bộ Real-Time)</div>
+        <div class="history-list" id="ui-history"></div>
+        <div class="history-title" style="margin-top: 15px;">Nhật Ký Cá Nhân & Chuyển Tiền</div>
+        <div class="log-list" id="ui-log"></div>
+    </div>
+
+    <!-- Popup Nổ Hũ -->
+    <div class="jackpot-popup" id="jackpot-popup">
+        🎉 NỔ HŨ 🎉<br>
+        <span style="font-size: 22px;" id="jackpot-msg"></span>
+    </div>
+
     <script>
-        // =========================================================================
-        // 1. CẤU HÌNH FIREBASE THEO YÊU CẦU
-        // =========================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyD8paYPgRUYh0CfHhlkDFwTpRoNq_BFZbg",
-            authDomain: "messenger-f5c90.firebaseapp.com",
-            databaseURL: "https://messenger-f5c90-default-rtdb.firebaseio.com", // Đã bổ sung URL Database tự động theo Project ID
-            projectId: "messenger-f5c90",
-            storageBucket: "messenger-f5c90.firebasestorage.app",
-            messagingSenderId: "876963590642",
-            appId: "1:876963590642:web:c87c47762f1c4facba3b6b"
-        };
-        
-        // Khởi tạo Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch(e) {
-            console.error("Firebase chưa được cấu hình đúng: ", e);
+        // --- HỆ THỐNG QUẢN LÝ USER & LOCALSTORAGE ---
+        function getUsersDB() {
+            let db = localStorage.getItem('game_users');
+            return db ? JSON.parse(db) : {};
         }
 
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        // Biến toàn cục
-        let currentUser = null;
-        let myBalance = 0;
-        let currentBet = null; 
-        let lastProcessedRollCount = 0;
-        
-        let selectedType = null;
-        let selectedAmount = 0;
-
-        // Định dạng tiền
-        const formatMoney = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-
-        // =========================================================================
-        // 2. HỆ THỐNG XÁC THỰC (AUTH)
-        // =========================================================================
-        function showScreen(screenId) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById(screenId).classList.remove('hidden');
+        function saveUsersDB(db) {
+            localStorage.setItem('game_users', JSON.stringify(db));
         }
 
-        auth.onAuthStateChanged((user) => {
-            if (user) {
+        let currentUser = localStorage.getItem('current_logged_user');
+
+        function switchAuthForm(type) {
+            document.getElementById('auth-login-box').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('auth-register-box').style.display = type === 'register' ? 'block' : 'none';
+        }
+
+        function register() {
+            const user = document.getElementById('reg-username').value.trim();
+            const pass = document.getElementById('reg-password').value.trim();
+            if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
+
+            let users = getUsersDB();
+            if(users[user]) return alert("Tên tài khoản đã tồn tại!");
+
+            users[user] = { password: pass, balance: 5000000, logs: [] };
+            saveUsersDB(users);
+            alert("Đăng ký thành công! Đã cấp 5.000.000 VNĐ. Vui lòng đăng nhập.");
+            switchAuthForm('login');
+        }
+
+        function login() {
+            const user = document.getElementById('login-username').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
+            let users = getUsersDB();
+
+            if(users[user] && users[user].password === pass) {
                 currentUser = user;
-                showScreen('game-screen');
-                document.getElementById('player-email').innerText = user.email;
-                
-                // Lắng nghe dữ liệu user
-                db.ref('users/' + user.uid).on('value', snap => {
-                    if(snap.exists()) {
-                        myBalance = snap.val().balance;
-                        document.getElementById('player-balance').innerText = formatMoney(myBalance);
-                    }
-                });
-
-                // Khởi động đồng bộ hệ thống trò chơi
-                initGameSync();
-                initChat();
+                localStorage.setItem('current_logged_user', currentUser);
+                document.getElementById('auth-modal').style.display = 'none';
+                initUserSession();
             } else {
-                currentUser = null;
-                showScreen('auth-screen');
+                alert("Tên đăng nhập hoặc mật khẩu không đúng!");
             }
-        });
-
-        async function register() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                // Tạo vốn khởi điểm 5 triệu VNĐ
-                await db.ref('users/' + cred.user.uid).set({ email: email, balance: 5000000 });
-            } catch(e) { document.getElementById('auth-error').innerText = e.message; }
         }
 
-        async function login() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            try { await auth.signInWithEmailAndPassword(email, pass); }
-            catch(e) { document.getElementById('auth-error').innerText = e.message; }
+        function logout() {
+            localStorage.removeItem('current_logged_user');
+            location.reload();
         }
 
-        function logout() { auth.signOut(); }
+        function initUserSession() {
+            if(!currentUser) {
+                document.getElementById('auth-modal').style.display = 'flex';
+                return;
+            }
+            document.getElementById('auth-modal').style.display = 'none';
+            document.getElementById('ui-username').innerText = currentUser;
+            
+            let users = getUsersDB();
+            if(users[currentUser]) {
+                document.getElementById('ui-balance').innerText = users[currentUser].balance.toLocaleString();
+                renderUserLogs(users[currentUser].logs || []);
+            }
+        }
 
-        // =========================================================================
-        // 3. LOGIC XÚC XẮC & ĐỒNG BỘ THỜI GIAN THỰC (SYNC)
-        // =========================================================================
-        
-        function initGameSync() {
-            // Lắng nghe đồng hồ đếm ngược và trạng thái game toàn cục
-            db.ref('gameState').on('value', snap => {
-                if(!snap.exists()) return;
-                const state = snap.val();
-                
-                // Nếu có phiên xổ mới mà ta chưa xử lý
-                if (state.rollCount > lastProcessedRollCount && lastProcessedRollCount !== 0) {
-                    processRollResult(state.currentScore, state.animalResult, state.isJackpot);
+        function updateUserBalance(newBalance) {
+            let users = getUsersDB();
+            if(users[currentUser]) {
+                users[currentUser].balance = newBalance;
+                saveUsersDB(users);
+                document.getElementById('ui-balance').innerText = newBalance.toLocaleString();
+            }
+        }
+
+        function getUserBalance() {
+            let users = getUsersDB();
+            return users[currentUser] ? users[currentUser].balance : 0;
+        }
+
+        // --- TÍNH NĂNG CHUYỂN TIỀN ---
+        function openTransferModal() { document.getElementById('transfer-modal').style.display = 'flex'; }
+        function closeTransferModal() { document.getElementById('transfer-modal').style.display = 'none'; }
+
+        function executeTransfer() {
+            const receiver = document.getElementById('tf-receiver').value.trim();
+            const amount = parseInt(document.getElementById('tf-amount').value);
+            
+            if(!receiver || isNaN(amount) || amount <= 0) return alert("Thông tin chuyển tiền không hợp lệ!");
+            if(receiver === currentUser) return alert("Không thể tự chuyển tiền cho chính mình!");
+
+            let users = getUsersDB();
+            if(!users[receiver]) return alert("Người nhận không tồn tại trên hệ thống!");
+
+            let senderBalance = users[currentUser].balance;
+            if(amount > senderBalance) return alert("Số dư không đủ để thực hiện giao dịch!");
+
+            // Trừ tiền người gửi, cộng tiền người nhận
+            users[currentUser].balance -= amount;
+            users[receiver].balance += amount;
+
+            let time = new Date().toLocaleTimeString();
+            let logSender = `[${time}] Chuyển ${amount.toLocaleString()} VND cho ${receiver}`;
+            let logReceiver = `[${time}] Nhận ${amount.toLocaleString()} VND từ ${currentUser}`;
+
+            users[currentUser].logs = users[currentUser].logs || [];
+            users[receiver].logs = users[receiver].logs || [];
+
+            users[currentUser].logs.unshift({ msg: logSender, type: 'transfer' });
+            users[receiver].logs.unshift({ msg: logReceiver, type: 'transfer' });
+
+            saveUsersDB(users);
+            updateUserBalance(users[currentUser].balance);
+            renderUserLogs(users[currentUser].logs);
+
+            alert(`Chuyển thành công ${amount.toLocaleString()} VNĐ tới tài khoản ${receiver}!`);
+            closeTransferModal();
+        }
+
+        // --- THUẬT TOÁN ĐỒNG BỘ GAME PRNG ---
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        const ROUND_DURATION = 12000;
+        const ROLLING_TIME = 2000;
+
+        let currentChip = 100000;
+        let bets = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
+        let activeRound = -1;
+        let isRolling = false;
+        let targetState = null;
+        let previousState = null;
+
+        function getGameState(targetRound) {
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            let rng = mulberry32(startOfDay);
+            
+            let hist = [];
+            let r_score = 0, r_cat = "", r_dice = [];
+            let isJackpot = false;
+
+            for (let i = 0; i <= targetRound; i++) {
+                let valid = ['Gà', 'Vịt', 'Ngỗng'];
+                if (hist.length >= 7) {
+                    let last7 = hist.slice(-7);
+                    let counts = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
+                    last7.forEach(h => counts[h]++);
+                    valid = valid.filter(v => counts[v] < 5);
                 }
-                
-                lastProcessedRollCount = state.rollCount;
-                updateBoardVisuals(state);
-            });
-
-            // Vòng lặp đếm ngược cục bộ mỗi giây (1 thiết bị sẽ cập nhật lên DB nếu hết giờ)
-            setInterval(() => {
-                db.ref('gameState').once('value', snap => {
-                    let now = Date.now();
-                    let state = snap.val();
-                    
-                    // Khởi tạo nếu chưa có
-                    if (!state) {
-                        triggerNewRoll(now);
-                        return;
-                    }
-
-                    let timeLeft = Math.ceil((state.nextRollTime - now) / 1000);
-                    if (timeLeft < 0) timeLeft = 0;
-                    document.getElementById('timer').innerText = timeLeft + "s";
-
-                    // Chặn cược 2 giây cuối
-                    document.getElementById('btn-place-bet').disabled = (timeLeft <= 2);
-
-                    // Hết giờ -> Đồng bộ quay xúc xắc (Sử dụng Transaction để không bị đúp)
-                    if (now >= state.nextRollTime) {
-                        triggerNewRoll(now);
-                    }
-                });
-            }, 1000);
-        }
-
-        // Tạo ra kết quả logic và đẩy lên Firebase
-        function triggerNewRoll(now) {
-            db.ref('gameState').transaction((currentData) => {
-                if (currentData === null) {
-                    return { nextRollTime: now + 12000, history: [], rollCount: 1, currentScore: 0, isJackpot: false };
+                if (hist.length >= 5) {
+                    let last5 = hist.slice(-5);
+                    if (last5.every(v => v === last5[0])) valid = valid.filter(v => v !== last5[0]);
                 }
-                
-                // Nếu thời gian hiện tại đã vượt qua nextRollTime
-                if (now >= currentData.nextRollTime) {
-                    let newCount = (currentData.rollCount || 0) + 1;
-                    let history = currentData.history || [];
-                    
-                    // Tính toán ngẫu nhiên có RÀNG BUỘC Logic
-                    let result = generateLogicalScore(history, newCount);
-                    
-                    history.push(result.animal);
-                    if (history.length > 50) history.shift();
+                if (valid.length === 0) valid = ['Gà', 'Vịt', 'Ngỗng'];
 
-                    return {
-                        nextRollTime: currentData.nextRollTime + 12000,
-                        history: history,
-                        rollCount: newCount,
-                        currentScore: result.score,
-                        animalResult: result.animal,
-                        isJackpot: result.isJackpot
-                    };
-                }
-                return currentData; // Không làm gì nếu người khác đã cập nhật
-            });
-        }
+                let category = valid[Math.floor(rng() * valid.length)];
+                let score = 0, nổHũ = false;
 
-        function generateLogicalScore(historyArray, rollCount) {
-            let attempts = 0;
-            while (attempts < 100) {
-                let isTenth = (rollCount % 10 === 0);
-                let score = Math.floor(Math.random() * 91) + 10; // 10 -> 100
-                let isJackpot = false;
-
-                // Nổ hũ mỗi 10 lần: Ép ra 10 hoặc 100
-                if (isTenth) {
-                    score = (Math.random() > 0.5) ? 10 : 100;
-                    isJackpot = true;
+                if (i % 10 === 0 && i !== 0) {
+                    let jk = rng() > 0.5 ? 10 : 100;
+                    score = jk;
+                    category = jk === 10 ? 'Gà' : 'Ngỗng';
+                    nổHũ = true;
                 } else {
-                    // Tránh nổ hũ ngoài chu kỳ 10
-                    if (score === 10 || score === 100) { attempts++; continue; }
+                    if (category === 'Gà') score = Math.floor(rng() * 30) + 11;
+                    else if (category === 'Vịt') score = Math.floor(rng() * 19) + 41;
+                    else if (category === 'Ngỗng') score = Math.floor(rng() * 40) + 60;
                 }
 
-                let animal = score <= 40 ? 'Gà' : (score <= 59 ? 'Vịt' : 'Ngỗng');
-
-                // Kiểm tra Ràng Buộc (Không quá 5 trong 7, không trùng > 5 liên tiếp)
-                if (!isTenth) {
-                    let recent7 = historyArray.slice(-6); 
-                    recent7.push(animal);
-                    let countIn7 = recent7.filter(a => a === animal).length;
-                    
-                    let consecutive = 1;
-                    for (let i = historyArray.length - 1; i >= 0; i--) {
-                        if (historyArray[i] === animal) consecutive++;
-                        else break;
+                if (i === targetRound) {
+                    r_score = score; r_cat = category; isJackpot = nổHũ;
+                    r_dice = [1,1,1,1,1,1,1,1,1,1];
+                    let rem = score - 10;
+                    while (rem > 0) {
+                        let idx = Math.floor(rng() * 10);
+                        if (r_dice[idx] < 10) { r_dice[idx]++; rem--; }
                     }
-
-                    if (countIn7 > 5 || consecutive > 5) { attempts++; continue; }
                 }
-
-                return { score, animal, isJackpot };
+                hist.push(category);
+                if (hist.length > 20) hist.shift();
             }
-            // Fallback an toàn
-            let score = Math.floor(Math.random() * 91) + 10;
-            return { score, animal: score <= 40 ? 'Gà' : (score <= 59 ? 'Vịt' : 'Ngỗng'), isJackpot: false };
+            return { score: r_score, category: r_cat, dice: r_dice, history: hist, isJackpot: isJackpot };
         }
 
-        // =========================================================================
-        // 4. HỆ THỐNG CƯỢC & HIỂN THỊ
-        // =========================================================================
-        function selectType(type) {
-            selectedType = type;
-            document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(type === 'Gà' ? 'btn-Ga' : type === 'Vịt' ? 'btn-Vit' : 'btn-Ngong').classList.add('active');
+        // --- ĐẶT CƯỢC & HIỂN THỊ ---
+        function selectChip(amount, element) {
+            currentChip = amount;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
         }
 
-        function selectAmount(amt) {
-            selectedAmount = amt;
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
-            if(amt === 100000) document.getElementById('amt-100k').classList.add('active');
-            else if(amt === 200000) document.getElementById('amt-200k').classList.add('active');
-            else if(amt === 500000) document.getElementById('amt-500k').classList.add('active');
-            else document.getElementById('amt-all').classList.add('active');
-        }
-
-        function placeBet() {
-            if (!selectedType || !selectedAmount) {
-                alert("Vui lòng chọn Cửa và Mệnh giá cược!"); return;
-            }
-            let actualAmount = selectedAmount === 'ALL' ? myBalance : selectedAmount;
+        function placeBet(category) {
+            if (!currentUser) return alert("Vui lòng đăng nhập!");
+            if (isRolling) return alert("Đang quay, không thể cược lúc này!");
             
-            if (actualAmount <= 0 || actualAmount > myBalance) {
-                alert("Số dư không đủ!"); return;
-            }
-            
-            if (currentBet) {
-                alert("Bạn đã cược trong phiên này rồi!"); return;
+            let betTypes = Object.keys(bets).filter(k => bets[k] > 0);
+            if (betTypes.length >= 2 && bets[category] === 0) {
+                return alert("Chỉ được đặt cược tối đa 2 cửa!");
             }
 
-            // Trừ tiền ngay lập tức
-            db.ref('users/' + currentUser.uid + '/balance').transaction(bal => {
-                if(bal >= actualAmount) return bal - actualAmount;
-                return bal; // hủy giao dịch nếu ko đủ
-            }, (error, committed) => {
-                if(committed) {
-                    currentBet = { type: selectedType, amount: actualAmount };
-                    document.getElementById('bet-status').innerText = `Đã cược: ${formatMoney(actualAmount)} vào ${selectedType}`;
-                }
+            let myBalance = getUserBalance();
+            let amount = currentChip === 'ALL' ? myBalance : currentChip;
+            if (amount === 0) return alert("Tài khoản của bạn đã hết tiền!");
+            if (amount > myBalance) return alert("Số dư không đủ!");
+
+            updateUserBalance(myBalance - amount);
+            bets[category] += amount;
+            document.getElementById(`bet-${category}`).innerText = bets[category].toLocaleString();
+        }
+
+        function renderDice(diceArray) {
+            const board = document.getElementById('ui-dice');
+            board.innerHTML = '';
+            diceArray.forEach(d => {
+                let div = document.createElement('div');
+                div.className = 'die'; div.innerText = d;
+                board.appendChild(div);
             });
         }
 
-        function processRollResult(score, animal, isJackpot) {
-            if (!currentBet) return; // Người chơi không cược phiên này
-            
-            let won = (currentBet.type === animal);
-            let betAmt = currentBet.amount;
-            let logMsg = "";
-            let logClass = "";
+        function renderHistory(histArray) {
+            const histBoard = document.getElementById('ui-history');
+            histBoard.innerHTML = '';
+            histArray.forEach(h => {
+                let div = document.createElement('div');
+                div.className = `hist-item hist-${h === 'Gà'?'Ga':h==='Vịt'?'Vit':'Ngong'}`;
+                div.innerText = h;
+                histBoard.appendChild(div);
+            });
+        }
 
-            if (won) {
-                // Tính tiền thưởng (X3 vốn cơ bản, nếu nổ hũ X18 + X3 = X21)
-                let multiplier = isJackpot ? 21 : 3;
-                let totalReturn = betAmt * multiplier;
-                let netWin = totalReturn - betAmt; 
+        function renderUserLogs(logs) {
+            const logBoard = document.getElementById('ui-log');
+            logBoard.innerHTML = '';
+            logs.forEach(l => {
+                let div = document.createElement('div');
+                let className = 'log-item ';
+                if(l.type === 'win') className += 'log-win';
+                else if(l.type === 'lose') className += 'log-lose';
+                else className += 'log-transfer';
+                div.className = className;
+                div.innerText = l.msg;
+                logBoard.appendChild(div);
+            });
+        }
 
-                // Cộng lại tiền vào tài khoản
-                db.ref('users/' + currentUser.uid + '/balance').transaction(bal => bal + totalReturn);
-                logMsg = `THẮNG (+${formatMoney(netWin)}) [Cược ${currentBet.type}, Ra ${animal} - ${score}đ]`;
-                logClass = "win";
+        function logPersonal(msg, type) {
+            let users = getUsersDB();
+            if(users[currentUser]) {
+                users[currentUser].logs = users[currentUser].logs || [];
+                users[currentUser].logs.unshift({ msg: msg, type: type });
+                saveUsersDB(users);
+                renderUserLogs(users[currentUser].logs);
+            }
+        }
+
+        function processResults(state) {
+            let totalBet = bets['Gà'] + bets['Vịt'] + bets['Ngỗng'];
+            if (totalBet === 0) return;
+
+            let myBalance = getUserBalance();
+            let time = new Date().toLocaleTimeString();
+            let msg = `[${time}] Cược ${totalBet.toLocaleString()}đ -> Ra ${state.category} (${state.score}Đ). `;
+
+            if (bets[state.category] > 0) {
+                let betWon = bets[state.category];
+                let winAmount = state.isJackpot ? betWon * 21 : betWon * 3;
+                msg += `THẮNG ${winAmount.toLocaleString()} VNĐ!`;
+                updateUserBalance(myBalance + winAmount);
+                logPersonal(msg, 'win');
             } else {
-                logMsg = `THUA (-${formatMoney(betAmt)}) [Cược ${currentBet.type}, Ra ${animal} - ${score}đ]`;
-                logClass = "lose";
+                msg += `THUA ${totalBet.toLocaleString()} VNĐ.`;
+                logPersonal(msg, 'lose');
             }
-
-            // Ghi lịch sử giao diện
-            let div = document.createElement('div');
-            div.className = `history-item ${logClass}`;
-            div.innerText = logMsg;
-            let list = document.getElementById('history-list');
-            list.prepend(div);
-
-            // Reset cược
-            currentBet = null;
-            document.getElementById('bet-status').innerText = "Chưa đặt cược";
         }
 
-        function updateBoardVisuals(state) {
-            if(!state || state.currentScore === 0) return;
+        function triggerJackpotAnim(winAmount) {
+            const jp = document.getElementById('jackpot-popup');
+            document.getElementById('jackpot-msg').innerText = winAmount > 0 ? `Bạn nhận thưởng: ${winAmount.toLocaleString()} VNĐ` : `Trúng hũ nhưng bạn không đặt cửa này!`;
+            jp.classList.add('show');
+            setTimeout(() => jp.classList.remove('show'), 4000);
+        }
+
+        // --- GAME LOOP MAIN ---
+        function gameLoop() {
+            const now = Date.now();
+            const startOfDay = new Date(new Date().setHours(0,0,0,0)).getTime();
+            const elapsed = now - startOfDay;
             
-            // Xóa jackpot text
-            let jpText = document.getElementById('jackpot-alert');
-            jpText.style.display = state.isJackpot ? 'block' : 'none';
+            const round = Math.floor(elapsed / ROUND_DURATION);
+            const timeRem = ROUND_DURATION - (elapsed % ROUND_DURATION);
+            
+            document.getElementById('ui-round').innerText = '#' + round;
 
-            let text = document.getElementById('current-result-text');
-            text.innerText = `Lần trước: ${state.currentScore} ĐIỂM - Thuộc về: ${state.animalResult}`;
-            text.style.color = state.animalResult === 'Gà' ? '#ff9800' : state.animalResult === 'Vịt' ? '#00d2ff' : '#4caf50';
-
-            // Phân bổ ngẫu nhiên điểm số ra 10 xúc xắc (chỉ để làm màu UI)
-            let remaining = state.currentScore - 10;
-            let dice = Array(10).fill(1);
-            while(remaining > 0) {
-                let idx = Math.floor(Math.random()*10);
-                if(dice[idx] < 10) { dice[idx]++; remaining--; }
-            }
-
-            let container = document.getElementById('dice-container');
-            container.innerHTML = '';
-            dice.forEach(val => {
-                let d = document.createElement('div');
-                d.className = 'die';
-                d.innerText = val;
-                container.appendChild(d);
-            });
-        }
-
-        // =========================================================================
-        // 5. CHAT & CHUYỂN TIỀN
-        // =========================================================================
-        function initChat() {
-            const msgBox = document.getElementById('chat-messages');
-            db.ref('chat').limitToLast(50).on('child_added', snap => {
-                let data = snap.val();
-                let p = document.createElement('div');
-                p.style.marginBottom = '5px';
-                p.innerHTML = `<b style="color:#00d2ff;">${data.email.split('@')[0]}:</b> ${data.text}`;
-                msgBox.appendChild(p);
-                msgBox.scrollTop = msgBox.scrollHeight;
-            });
-        }
-
-        function sendMessage() {
-            let input = document.getElementById('chat-input-text');
-            let text = input.value.trim();
-            if(text.length > 0) {
-                db.ref('chat').push({
-                    email: currentUser.email, text: text, time: Date.now()
-                });
-                input.value = '';
-            }
-        }
-
-        function transferMoney() {
-            let toEmail = document.getElementById('transfer-email').value.trim();
-            let amount = parseInt(document.getElementById('transfer-amount').value);
-
-            if(!toEmail || !amount || amount <= 0) return alert("Dữ liệu không hợp lệ!");
-            if(amount > myBalance) return alert("Không đủ số dư!");
-            if(toEmail === currentUser.email) return alert("Không thể chuyển cho chính mình!");
-
-            // Quét tìm User UID qua Email (Cấu trúc phẳng cho demo, thực tế cần index)
-            db.ref('users').once('value', snap => {
-                let users = snap.val();
-                let targetUid = null;
-                for(let uid in users) {
-                    if(users[uid].email === toEmail) { targetUid = uid; break; }
+            if (round !== activeRound) {
+                if (activeRound !== -1 && targetState) {
+                    renderDice(targetState.dice);
+                    document.getElementById('ui-score').innerText = `Tổng Điểm: ${targetState.score} (${targetState.category})`;
+                    renderHistory(targetState.history);
+                    
+                    if (targetState.isJackpot) {
+                        let win = bets[targetState.category] ? bets[targetState.category] * 21 : 0;
+                        triggerJackpotAnim(win);
+                    }
+                    if(currentUser) processResults(targetState);
+                    previousState = targetState;
                 }
 
-                if(!targetUid) return alert("Không tìm thấy người dùng này!");
-
-                // Thực hiện trừ tiền mình và cộng tiền người ta
-                db.ref('users/' + currentUser.uid + '/balance').transaction(bal => bal - amount);
-                db.ref('users/' + targetUid + '/balance').transaction(bal => bal + amount);
-                alert(`Đã chuyển thành công ${formatMoney(amount)} cho ${toEmail}!`);
+                activeRound = round;
+                targetState = getGameState(round); 
+                isRolling = false;
                 
-                document.getElementById('transfer-amount').value = '';
-            });
+                bets = { 'Gà': 0, 'Vịt': 0, 'Ngỗng': 0 };
+                document.getElementById('bet-Gà').innerText = '0';
+                document.getElementById('bet-Vịt').innerText = '0';
+                document.getElementById('bet-Ngỗng').innerText = '0';
+
+                if (!previousState) {
+                    previousState = getGameState(round - 1);
+                    renderDice(previousState.dice);
+                    document.getElementById('ui-score').innerText = `Tổng Điểm: ${previousState.score} (${previousState.category})`;
+                    renderHistory(previousState.history);
+                }
+            }
+
+            if (timeRem <= ROLLING_TIME && !isRolling) {
+                isRolling = true;
+                document.getElementById('ui-score').innerText = `Đang lắc xúc xắc...`;
+            }
+
+            if (isRolling) {
+                document.getElementById('ui-timer').innerText = "0.0";
+                const board = document.getElementById('ui-dice');
+                board.childNodes.forEach(node => {
+                    node.innerText = Math.floor(Math.random() * 10) + 1;
+                    node.style.transform = `rotate(${Math.random()*20 - 10}deg)`;
+                });
+            } else {
+                document.getElementById('ui-timer').innerText = (timeRem / 1000).toFixed(1);
+            }
+
+            requestAnimationFrame(gameLoop);
         }
+ // Chuyển Tab giao diện
+        function switchTab(tab) {
+            if (tab === 'game') {
+                document.getElementById('tabGame').classList.remove('hidden');
+                document.getElementById('tabTransfer').classList.add('hidden');
+                document.getElementById('tabGameBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white';
+                document.getElementById('tabTransferBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300';
+            } else {
+                document.getElementById('tabGame').classList.add('hidden');
+                document.getElementById('tabTransfer').classList.remove('hidden');
+                document.getElementById('tabGameBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300';
+                document.getElementById('tabTransferBtn').className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white';
+            }
+        }
+
+        // Hiển thị Notification Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+    </script>
+    <!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase App của tôi</title>
+</head>
+<body>
+    
+    <!-- Code HTML của bạn ở đây -->
+
+    <!-- Nhúng Firebase bằng module script -->
+    <script type="module">
+        // Import Firebase từ CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        // Cấu hình Firebase của bạn
+        const firebaseConfig = {
+          apiKey: "AIzaSyBdjd7qONQQuUAmkMK-rP-zCp06rnyRYks",
+          authDomain: "gamevn-f6cc8.firebaseapp.com",
+          databaseURL: "https://gamevn-f6cc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "gamevn-f6cc8",
+          storageBucket: "gamevn-f6cc8.firebasestorage.app",
+          messagingSenderId: "147617412521",
+          appId: "1:147617412521:web:8143e0c93823accc9480b8"
+        };
+
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        console.log("Đã kết nối Firebase thành công!");
+        // Khởi chạy
+        initUserSession();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
