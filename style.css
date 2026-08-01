@@ -1,0 +1,396 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --card-border: #334155;
+    --primary: #38bdf8;
+    --primary-hover: #0284c7;
+    --accent-red: #f43f5e;
+    --accent-green: #10b981;
+    --accent-yellow: #f59e0b;
+    --accent-purple: #a855f7;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px 10px;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+header {
+    text-align: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 1px solid #4338ca;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px;
+    color: #38bdf8;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+header p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.screen {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* SETUP SCREEN */
+.setup-box {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+}
+
+.setup-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    color: #fff;
+}
+
+.setup-desc {
+    color: var(--text-muted);
+    font-size: 14px;
+    max-width: 450px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 320px;
+}
+
+.input-group label {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+input[type="number"], select {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: #0f172a;
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+input[type="number"]:focus, select:focus {
+    border-color: var(--primary);
+}
+
+.btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-cancel {
+    background: #475569;
+    box-shadow: none;
+}
+
+/* GAME DASHBOARD */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--card-border);
+    margin-bottom: 20px;
+}
+
+.turn-badge {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+}
+
+.status-text {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.vs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.player-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+}
+
+.player-card.bot {
+    border-color: rgba(244, 63, 94, 0.4);
+}
+
+.player-card.user {
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.avatar {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.secret-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.user .secret-val { color: var(--accent-green); }
+.bot .secret-val { color: var(--accent-red); }
+
+/* SKILLS SECTION */
+.skills-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+@media (max-width: 600px) {
+    .skills-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.skill-btn {
+    background: #0f172a;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.skill-btn:hover {
+    border-color: var(--primary);
+    background: rgba(56, 189, 248, 0.05);
+    transform: translateY(-2px);
+}
+
+.skill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.skill-a { color: var(--primary); }
+.skill-b { color: var(--accent-yellow); }
+.skill-c { color: var(--accent-purple); }
+.skill-d { color: var(--accent-red); }
+
+.skill-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* BATTLE LOG */
+.log-section {
+    background: #0f172a;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 15px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.log-title {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.log-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-item {
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease;
+}
+
+.log-user {
+    background: rgba(56, 189, 248, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.log-bot {
+    background: rgba(244, 63, 94, 0.1);
+    border-left: 3px solid var(--accent-red);
+}
+
+.log-system {
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 3px solid var(--accent-yellow);
+    font-style: italic;
+}
+
+/* MODAL POPUPS */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal {
+    background: var(--card-bg);
+    border: 2px solid var(--primary);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+.modal-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.modal-body {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.modal-input-group {
+    margin: 15px 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
